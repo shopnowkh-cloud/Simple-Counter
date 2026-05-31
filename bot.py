@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os,io,logging,warnings
 from PIL import Image; from fpdf import FPDF; import fitz
+import qrcode; from pyzbar import pyzbar
 from telegram import Update,ReplyKeyboardMarkup,ReplyKeyboardRemove,InputFile
 from telegram.ext import Application,CommandHandler,MessageHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode; from telegram.warnings import PTBUserWarning
@@ -10,12 +11,15 @@ BOT_TOKEN=os.environ.get("BOT_TOKEN","")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណត់!")
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
-S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG=range(5); H=ParseMode.HTML; END=ConversationHandler.END
+S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN=range(8); H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── keyboards ─────────────────────────────────────────────────────────────────
 def _rk(*rows): return ReplyKeyboardMarkup(list(rows),resize_keyboard=True)
-KB_MAIN   = _rk(["✍️ រចនាប័ទ្មអក្សរ","🗂️ បំប្លែង PDF"])
+KB_MAIN   = _rk(["✍️ រចនាប័ទ្មអក្សរ","🗂️ បំប្លែង PDF"],["📷 QR Code"])
 KB_DOC    = _rk(["🖼️ រូបភាព → PDF"],["🖼️ PDF → PNG","📷 PDF → JPG"],["🏠 ម៉ឺនុយមេ"])
+KB_QR     = _rk(["🔳 បង្កើត QR","🔍 Scan QR"],["🏠 ម៉ឺនុយមេ"])
+KB_QR_CREATE_DONE = _rk(["🔳 QR ថ្មី","🔍 Scan QR"],["🏠 ម៉ឺនុយមេ"])
+KB_QR_SCAN_DONE   = _rk(["🔍 Scan ថ្មី","🔳 បង្កើត QR"],["🏠 ម៉ឺនុយមេ"])
 KB_CANCEL = _rk(["❌ បោះបង់"])
 KB_STYLE  = _rk(["✍️ ដំណើរការថ្មី","🏠 ម៉ឺនុយមេ"])
 KB_PDF_DONE = _rk(["🖼️ PDF ថ្មី","🏠 ម៉ឺនុយមេ"])
@@ -69,6 +73,10 @@ async def go_doc(u,ctx):
     await u.message.reply_text("🗂️ <b>បំប្លែង PDF</b>\nជ្រើស:",reply_markup=KB_DOC,parse_mode=H)
     return S_DOC
 
+async def go_qr(u,ctx):
+    await u.message.reply_text("📷 <b>QR Code</b>\nជ្រើស:",reply_markup=KB_QR,parse_mode=H)
+    return S_QR
+
 # ── handlers ──────────────────────────────────────────────────────────────────
 async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data.clear()
@@ -81,6 +89,7 @@ async def main_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await u.message.reply_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ វាយ <b>អក្សរឡាតាំង</b>:\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=KB_CANCEL,parse_mode=H)
         return S_STYLE
     if t=="🗂️ បំប្លែង PDF": return await go_doc(u,ctx)
+    if t=="📷 QR Code": return await go_qr(u,ctx)
     await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=KB_MAIN,parse_mode=H)
     return S_MAIN
 
@@ -174,6 +183,58 @@ async def pdf2img_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
     return S_DOC
 
+async def qr_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    t=u.message.text
+    if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_main(u,ctx)
+    if t in("🔳 បង្កើត QR","🔳 QR ថ្មី"):
+        await u.message.reply_text("🔳 <b>បង្កើត QR Code</b>\n\n✏️ វាយ <b>Link / Text</b> ដែលចង់បំប្លែង:",reply_markup=KB_CANCEL,parse_mode=H)
+        return S_QR_CREATE
+    if t in("🔍 Scan QR","🔍 Scan ថ្មី"):
+        await u.message.reply_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=KB_CANCEL,parse_mode=H)
+        return S_QR_SCAN
+    return await go_qr(u,ctx)
+
+async def qr_create_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    t=u.message.text
+    if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_main(u,ctx)
+    if t in("🔍 Scan QR","🔍 Scan ថ្មី"):
+        await u.message.reply_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=KB_CANCEL,parse_mode=H)
+        return S_QR_SCAN
+    try:
+        qr=qrcode.QRCode(version=None,error_correction=qrcode.constants.ERROR_CORRECT_H,box_size=10,border=4)
+        qr.add_data(t); qr.make(fit=True)
+        img=qr.make_image(fill_color="black",back_color="white").convert("RGB")
+        buf=io.BytesIO(); img.save(buf,format="PNG"); buf.seek(0)
+        await u.message.reply_photo(photo=buf,caption=f"✅ <b>QR Code បង្កើតជោគជ័យ!</b>\n\n📝 <code>{t}</code>",reply_markup=KB_QR_CREATE_DONE,parse_mode=H)
+    except Exception as e:
+        logger.error(f"qr_create: {e}")
+        await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
+    return S_QR
+
+async def qr_scan_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    t=u.message.text or ""
+    if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_main(u,ctx)
+    if t in("🔳 បង្កើត QR","🔳 QR ថ្មី"):
+        await u.message.reply_text("🔳 <b>បង្កើត QR Code</b>\n\n✏️ វាយ <b>Link / Text</b>:",reply_markup=KB_CANCEL,parse_mode=H)
+        return S_QR_CREATE
+    if t: await u.message.reply_text("📤 Upload <b>រូបភាព QR</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_SCAN
+    p=u.message.photo[-1] if u.message.photo else None
+    dc=u.message.document if u.message.document else None
+    if not p and not dc:
+        await u.message.reply_text("⚠️ Upload <b>រូបភាព QR</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_SCAN
+    try:
+        raw=bytes(await (await ctx.bot.get_file(p.file_id if p else dc.file_id)).download_as_bytearray())
+        img=Image.open(io.BytesIO(raw)).convert("RGB")
+        codes=pyzbar.decode(img)
+        if not codes:
+            await u.message.reply_text("❌ <b>រកមិនឃើញ QR Code!</b>\nសូម Upload រូបភាពច្បាស់ជាង",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_SCAN
+        lines="\n\n".join(f"📌 <b>លទ្ធផលទី {i+1}:</b>\n<code>{c.data.decode('utf-8','replace')}</code>" for i,c in enumerate(codes))
+        await u.message.reply_text(f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",reply_markup=KB_QR_SCAN_DONE,parse_mode=H)
+    except Exception as e:
+        logger.error(f"qr_scan: {e}")
+        await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
+    return S_QR
+
 async def _back_main(u,ctx):
     await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=KB_MAIN,parse_mode=H)
     return S_MAIN
@@ -188,6 +249,11 @@ async def _catch_pdf(u,ctx):
     await u.message.reply_text("📤 Upload <b>រូបភាព</b> (photo/file)!",reply_markup=kb,parse_mode=H); return S_PDF
 async def _catch_pdf2img(u,ctx):
     await u.message.reply_text("📎 Upload <b>ឯកសារ PDF</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF2IMG
+async def _catch_qr(u,ctx): return await go_qr(u,ctx)
+async def _catch_qr_create(u,ctx):
+    await u.message.reply_text("✏️ វាយ <b>Link / Text</b> ដើម្បីបង្កើត QR:",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_CREATE
+async def _catch_qr_scan(u,ctx):
+    await u.message.reply_text("📤 Upload <b>រូបភាព QR</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_SCAN
 
 def main():
     app=Application.builder().token(BOT_TOKEN).connect_timeout(10).read_timeout(30).write_timeout(30).pool_timeout(10).build()
@@ -198,11 +264,14 @@ def main():
     app.add_handler(ConversationHandler(
         entry_points=[CommandHandler("start",cmd_start),MessageHandler(TXT,main_handler),MessageHandler(ANY,cmd_start)],
         states={
-            S_MAIN:    [MessageHandler(TXT,main_handler),    MessageHandler(ANY,_catch_main)],
-            S_DOC:     [MessageHandler(TXT,doc_handler),     MessageHandler(ANY,_catch_doc)],
-            S_STYLE:   [MessageHandler(TXT,style_handler),   MessageHandler(ANY,_catch_style)],
-            S_PDF:     [MessageHandler(TXT|IMG,pdf_handler), MessageHandler(ANY,_catch_pdf)],
-            S_PDF2IMG: [MessageHandler(TXT|PDF_F,pdf2img_handler), MessageHandler(ANY,_catch_pdf2img)],
+            S_MAIN:      [MessageHandler(TXT,main_handler),          MessageHandler(ANY,_catch_main)],
+            S_DOC:       [MessageHandler(TXT,doc_handler),           MessageHandler(ANY,_catch_doc)],
+            S_STYLE:     [MessageHandler(TXT,style_handler),         MessageHandler(ANY,_catch_style)],
+            S_PDF:       [MessageHandler(TXT|IMG,pdf_handler),       MessageHandler(ANY,_catch_pdf)],
+            S_PDF2IMG:   [MessageHandler(TXT|PDF_F,pdf2img_handler), MessageHandler(ANY,_catch_pdf2img)],
+            S_QR:        [MessageHandler(TXT,qr_handler),            MessageHandler(ANY,_catch_qr)],
+            S_QR_CREATE: [MessageHandler(TXT,qr_create_handler),     MessageHandler(ANY,_catch_qr_create)],
+            S_QR_SCAN:   [MessageHandler(TXT|IMG,qr_scan_handler),   MessageHandler(ANY,_catch_qr_scan)],
         },
         fallbacks=[CommandHandler("start",cmd_start),MessageHandler(ANY,_back_main)],
         per_message=False,allow_reentry=True,
