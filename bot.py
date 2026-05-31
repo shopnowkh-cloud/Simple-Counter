@@ -12,7 +12,7 @@ if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណ�
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
 
-(S_STYLE,S_PDF,S_MORSE)=range(3)
+(S_STYLE,S_PDF)=range(2)
 H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── keyboards ───────────────────────────────────────────────────────────────────
@@ -23,7 +23,6 @@ HOME=[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
 def mm():
     return mkb(
         [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
-        [IKB("📡 កូដ Morse",callback_data="menu_morse")],
         [IKB("⏰ World Clock",callback_data="menu_wclock")],
         [IKB("ℹ️  អំពី Bot",callback_data="menu_about")],
     )
@@ -47,10 +46,6 @@ SC={"a":"ᴀ","b":"ʙ","c":"ᴄ","d":"ᴅ","e":"ᴇ","f":"ꜰ","g":"ɢ","h":"ʜ"
 BB={**{chr(i):chr(i+0x24B6-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x24D0-0x61) for i in range(0x61,0x7B)},**{"0":"⓪","1":"①","2":"②","3":"③","4":"④","5":"⑤","6":"⑥","7":"⑦","8":"⑧","9":"⑨"}}
 UD={"a":"ɐ","b":"q","c":"ɔ","d":"p","e":"ǝ","f":"ɟ","g":"ƃ","h":"ɥ","i":"ᴉ","j":"ɾ","k":"ʞ","l":"l","m":"ɯ","n":"u","o":"o","p":"d","q":"b","r":"ɹ","s":"s","t":"ʇ","u":"n","v":"ʌ","w":"ʍ","x":"x","y":"ʎ","z":"z","A":"∀","B":"ᗺ","C":"Ɔ","D":"ᗡ","E":"Ǝ","F":"Ⅎ","G":"פ","H":"H","I":"I","J":"ſ","K":"ʞ","L":"˥","M":"W","N":"N","O":"O","P":"Ԁ","Q":"Q","R":"ɹ","S":"S","T":"┴","U":"∩","V":"Λ","W":"M","X":"X","Y":"⅄","Z":"Z","0":"0","1":"Ɩ","2":"ᄅ","3":"Ɛ","4":"ᔭ","5":"ϛ","6":"9","7":"ㄥ","8":"8","9":"6"," ":" "}
 TS={"bold":("𝗕𝗼𝗹𝗱",lambda t:_t(t,BM)),"italic":("𝘐𝘵𝘢𝘭𝘪𝘤",lambda t:_t(t,IM)),"bold_italic":("𝑩𝒐𝒍𝒅 𝑰𝒕𝒂𝒍𝒊𝒄",lambda t:_t(t,BIM)),"script":("𝒮𝒸𝓇𝒾𝓅𝓉",lambda t:_t(t,SM)),"double":("𝔻𝕠𝕦𝕓𝕝𝕖",lambda t:_t(t,DM)),"small_caps":("Sᴍᴀʟʟ Cᴀᴘꜱ",lambda t:_t(t.lower(),SC)),"bubble":("Ⓑⓤⓑⓑⓛⓔ",lambda t:_t(t,BB)),"upside_down":("uʍop ǝpᴉsdn",lambda t:_t(t,UD)[::-1]),"strikethrough":("S̶t̶r̶i̶k̶e̶",lambda t:"".join(c+"̶" for c in t)),"underline":("U̲n̲d̲e̲r̲",lambda t:"".join(c+"̲" for c in t))}
-MO={"A":".-","B":"-...","C":"-.-.","D":"-..","E":".","F":"..-.","G":"--.","H":"....","I":"..","J":".---","K":"-.-","L":".-..","M":"--","N":"-.","O":"---","P":".--.","Q":"--.-","R":".-.","S":"...","T":"-","U":"..-","V":"...-","W":".--","X":"-..-","Y":"-.--","Z":"--..","0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....","6":"-....","7":"--...","8":"---..","9":"----."," ":"/"}
-MR={v:k for k,v in MO.items()}
-def t2m(t): return " ".join(MO.get(c.upper(),"?") for c in t)
-def m2t(m): return "".join(MR.get(w,"?") for w in m.strip().split(" "))
 
 # ── /start ──────────────────────────────────────────────────────────────────────
 async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -77,11 +72,6 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if d=="menu_photo_pdf":
         ctx.user_data["pdf_photos"]=[]
         await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n\n📤 Upload រូបភាព (អាចច្រើន)\n✅ ចប់ → ចុច <b>បង្កើត PDF</b>",reply_markup=mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="back_main")]),parse_mode=H); return S_PDF
-    if d=="menu_morse":
-        await q.edit_message_text("📡 <b>កូដ Morse</b>\n\nសូមជ្រើសរើសទិសដៅ៖",reply_markup=mkb([IKB("🔤 អក្សរ → Morse",callback_data="morse_to"),IKB("📡 Morse → អក្សរ",callback_data="morse_from")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_MORSE
-    if d=="morse_to":   ctx.user_data["morse_dir"]="to";   await q.edit_message_text("📡 <b>អក្សរ → Morse</b>\n\n✏️ សូមវាយអក្សរ (English)៖",reply_markup=bc(),parse_mode=H); return S_MORSE
-    if d=="morse_from": ctx.user_data["morse_dir"]="from"; await q.edit_message_text("📡 <b>Morse → អក្សរ</b>\n\n✏️ សូមវាយ Morse Code៖\n<code>-- --- .-. ... .</code>",reply_markup=bc(),parse_mode=H); return S_MORSE
-
     # ── World Clock ──
     if d=="menu_wclock":
         return await _show_world_clock(q)
@@ -163,12 +153,6 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
     msg=await q.message.reply_document(document=InputFile(buf,filename="KhmerBot.pdf"),caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ ចំនួន {len(photos)} ទំព័រ",reply_markup=InlineKeyboardMarkup([[IKB("🖼️ PDF ថ្មី",callback_data="menu_photo_pdf")],HOME]),parse_mode=H)
     _save(ctx,msg); ctx.user_data["pdf_photos"]=[]; return END
 
-# ── Morse ───────────────────────────────────────────────────────────────────────
-async def morse(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text.strip(); d=ctx.user_data.get("morse_dir","to"); await u.message.delete()
-    r,h,lb=(t2m(t),"អក្សរ → Morse","Morse") if d=="to" else(m2t(t),"Morse → អក្សរ","អក្សរ")
-    await _edit(ctx,f"📡 <b>{h}</b>\n━━━━━━━━━━━━\n📥 Input: <code>{t[:200]}</code>\n📤 {lb}: <code>{r[:500]}</code>",InlineKeyboardMarkup([[IKB("🔄 ថ្មី",callback_data="menu_morse")],HOME])); return END
-
 # ── Fallback ─────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     try: await u.message.delete()
@@ -184,7 +168,6 @@ def main():
         states={
             S_STYLE: [MessageHandler(TXT,text_style), CB_H],
             S_PDF:   [MessageHandler(IMG,pdf_photo),  CB_H],
-            S_MORSE: [MessageHandler(TXT,morse),      CB_H],
         },
         fallbacks=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
         per_message=False,allow_reentry=True,
