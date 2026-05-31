@@ -427,7 +427,7 @@ async def count_text(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         f"🔢 លេខ: <b>{digits:,}</b>\n"
         f"😊 Emoji: <b>{emojis}</b>\n"
         f"💾 ទំហំ: <b>{size_b:,} bytes</b>",
-        InlineKeyboardMarkup([[IKB("🔄 រាប់អក្សរថ្មី",callback_data="menu_count")],HOME])); return END
+        InlineKeyboardMarkup([HOME])); return END
 
 # ── Number Base Converter ────────────────────────────────────────────────────────
 async def nbase_convert(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
