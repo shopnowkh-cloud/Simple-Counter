@@ -117,9 +117,11 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
     pdf=FPDF()
     for raw in photos:
         img=Image.open(io.BytesIO(raw)).convert("RGB"); w,h=img.size
-        if w>h: pdf.add_page("L",(297,210)); pw,ph=297,210
-        else:   pdf.add_page("P",(210,297)); pw,ph=210,297
-        ra=min(pw/w,ph/h); nw,nh=w*ra,h*ra; tmp=io.BytesIO(); img.save(tmp,format="JPEG",quality=90); tmp.seek(0); pdf.image(tmp,x=(pw-nw)/2,y=(ph-nh)/2,w=nw,h=nh)
+        pw,ph=w*25.4/96,h*25.4/96
+        pdf.add_page(format=(pw,ph))
+        pdf.set_margins(0,0,0); pdf.set_auto_page_break(False)
+        tmp=io.BytesIO(); img.save(tmp,format="JPEG",quality=95); tmp.seek(0)
+        pdf.image(tmp,x=0,y=0,w=pw,h=ph)
     buf=io.BytesIO(bytes(pdf.output()))
     msg=await q.message.reply_document(document=InputFile(buf,filename="KhmerBot.pdf"),caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ ចំនួន {len(photos)} ទំព័រ",reply_markup=InlineKeyboardMarkup([[IKB("🖼️ PDF ថ្មី",callback_data="menu_photo_pdf")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]]),parse_mode=H)
     _save(ctx,msg); ctx.user_data["pdf_photos"]=[]; return END
