@@ -1,4 +1,4 @@
-modules = ["python-3.12", "nix", "nodejs-20"]
+modules = ["nix", "nodejs-20", "python-3.11"]
 
 [deployment]
 router = "application"
@@ -34,6 +34,7 @@ outputType = "console"
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
 expertMode = true
+integrations = ["python_openai_ai_integrations:1.0.0"]
 
 [postMerge]
 path = "scripts/post-merge.sh"
