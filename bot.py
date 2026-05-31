@@ -262,7 +262,7 @@ def main():
     PDF_F=filters.Document.MimeType("application/pdf")|filters.Document.FileExtension("pdf")
     ANY=filters.ALL
     app.add_handler(ConversationHandler(
-        entry_points=[CommandHandler("start",cmd_start),MessageHandler(TXT,main_handler),MessageHandler(ANY,cmd_start)],
+        entry_points=[CommandHandler("start",cmd_start),MessageHandler(ANY,cmd_start)],
         states={
             S_MAIN:      [MessageHandler(TXT,main_handler),          MessageHandler(ANY,_catch_main)],
             S_DOC:       [MessageHandler(TXT,doc_handler),           MessageHandler(ANY,_catch_doc)],
@@ -274,7 +274,7 @@ def main():
             S_QR_SCAN:   [MessageHandler(TXT|IMG,qr_scan_handler),   MessageHandler(ANY,_catch_qr_scan)],
         },
         fallbacks=[CommandHandler("start",cmd_start),MessageHandler(ANY,_back_main)],
-        per_message=False,allow_reentry=True,
+        per_message=False,allow_reentry=False,
     ))
     logger.info("🤖 Bot កំពុង Start..."); app.run_polling(allowed_updates=Update.ALL_TYPES,poll_interval=1.0,drop_pending_updates=True)
 if __name__=="__main__": main()
