@@ -36,24 +36,15 @@ def _fun_nav(excl=None):
     r=[x for x in b if x.callback_data!=excl]; return [r[i:i+2] for i in range(0,len(r),2)]
 def mm():
     return mkb(
-        # ── 🟣 Text & Document ──
-        [IKB("🟣  TEXT & DOCUMENT",callback_data="noop")],
         [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
         [IKB("📝 រាប់អក្សរ",callback_data="menu_count"),             IKB("📡 កូដ Morse",callback_data="menu_morse")],
-        # ── 🟢 Math & Convert ──
-        [IKB("🟢  MATH & CONVERT",callback_data="noop")],
         [IKB("🔢 ម៉ាស៊ីនគណនា",callback_data="menu_calculator"),  IKB("🌡️ សីតុណ្ហភាព",callback_data="menu_temp")],
         [IKB("🔢 ប្ដូរគោលលេខ",callback_data="menu_nbase"),       IKB("📏 ប្ដូរឯកតា",callback_data="menu_unit")],
         [IKB("📐 BMI Calculator",callback_data="menu_bmi"),        IKB("💰 គណនាការប្រាក់",callback_data="menu_loan")],
-        # ── 🔴 Security ──
-        [IKB("🔴  SECURITY",callback_data="noop")],
         [IKB("🔐 ពិនិត្យ Password",callback_data="menu_password"),  IKB("🔑 បង្កើត Password",callback_data="menu_genpass")],
         [IKB("🔒 Base64",callback_data="menu_base64"),               IKB("#️⃣ Hash Generator",callback_data="menu_hash")],
-        # ── 🟡 Fun & Utility ──
-        [IKB("🟡  FUN & UTILITY",callback_data="noop")],
         [IKB("🎲 Random Picker",callback_data="menu_picker"),       IKB("🎰 Coin & Dice",callback_data="menu_dice")],
         [IKB("⏰ World Clock",callback_data="menu_wclock"),          IKB("📅 គណនាអាយុ",callback_data="menu_date")],
-        # ── Info ──
         [IKB("ℹ️  អំពី Bot",callback_data="menu_about")],
     )
 
