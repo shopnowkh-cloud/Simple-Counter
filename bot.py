@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import os,io,re,logging,warnings,zoneinfo
 from PIL import Image; from fpdf import FPDF
+import fitz  # pymupdf
 from datetime import datetime
 from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup,InputFile
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
@@ -12,7 +13,7 @@ if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណ�
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
 
-(S_STYLE,S_PDF)=range(2)
+(S_STYLE,S_PDF,S_PDF2IMG)=range(3)
 H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── keyboards ───────────────────────────────────────────────────────────────────
@@ -22,9 +23,16 @@ def bc(): return mkb([IKB("❌ បោះបង់",callback_data="back_main")])
 HOME=[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
 def mm():
     return mkb(
-        [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
+        [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🗂️ បំប្លែង PDF",callback_data="menu_doc_tools")],
         [IKB("⏰ World Clock",callback_data="menu_wclock")],
         [IKB("ℹ️  អំពី Bot",callback_data="menu_about")],
+    )
+def doc_tools_kb():
+    return mkb(
+        [IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
+        [IKB("🖼️ PDF → PNG",callback_data="menu_pdf2png")],
+        [IKB("📷 PDF → JPG",callback_data="menu_pdf2jpg")],
+        [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")],
     )
 
 # ── edit/save helpers ───────────────────────────────────────────────────────────
@@ -64,14 +72,32 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data["cid"]=q.message.chat_id; ctx.user_data["mid"]=q.message.message_id
 
     if d=="back_main":
-        await q.edit_message_text(
-            "👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",
-            reply_markup=mm(),parse_mode=H); return END
+        await q.edit_message_text("👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",reply_markup=mm(),parse_mode=H); return END
+
     if d=="menu_text_style":
         await q.edit_message_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ សូមវាយ <b>អក្សរឡាតាំង</b>៖\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=bc(),parse_mode=H); return S_STYLE
+
+    # ── Document Tools sub-menu ──
+    if d=="menu_doc_tools":
+        await q.edit_message_text(
+            "🗂️ <b>បំប្លែង PDF</b>\n\nសូមជ្រើសរើសប្រភេទ៖",
+            reply_markup=doc_tools_kb(),parse_mode=H); return END
+
     if d=="menu_photo_pdf":
         ctx.user_data["pdf_photos"]=[]
-        await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n\n📤 Upload រូបភាព (អាចច្រើន)\n✅ ចប់ → ចុច <b>បង្កើត PDF</b>",reply_markup=mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="back_main")]),parse_mode=H); return S_PDF
+        await q.edit_message_text(
+            "🖼️ <b>រូបភាព → PDF</b>\n\n📤 Upload រូបភាព (អាចច្រើន)\n✅ ចប់ → ចុច <b>បង្កើត PDF</b>",
+            reply_markup=mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="menu_doc_tools")]),
+            parse_mode=H); return S_PDF
+
+    if d in("menu_pdf2png","menu_pdf2jpg"):
+        fmt="PNG" if d=="menu_pdf2png" else "JPG"
+        ctx.user_data["pdf2img_fmt"]=fmt
+        await q.edit_message_text(
+            f"{'🖼️' if fmt=='PNG' else '📷'} <b>PDF → {fmt}</b>\n\n📎 សូម Upload ឯកសារ <b>PDF</b>:\n<i>Bot នឹងបំប្លែងរាល់ទំព័រ → {fmt}</i>",
+            reply_markup=mkb([IKB("❌ បោះបង់",callback_data="menu_doc_tools")]),
+            parse_mode=H); return S_PDF2IMG
+
     # ── World Clock ──
     if d=="menu_wclock":
         return await _show_world_clock(q)
@@ -88,11 +114,12 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"📡 python-telegram-bot: <b>{ptb_ver}</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"📦 <b>Libraries:</b>\n"
-            f"   fpdf2 • Pillow • zoneinfo\n"
+            f"   fpdf2 • Pillow • PyMuPDF • zoneinfo\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"✍️ Text Style  🖼️ PDF\n"
-            f"📡 Morse  ⏰ World Clock\n"
-            f"📊 <b>សរុប: 4 មុខងារ</b>",
+            f"✍️ Text Style\n"
+            f"🗂️ PDF: រូបភាព→PDF | PDF→PNG | PDF→JPG\n"
+            f"⏰ World Clock\n"
+            f"📊 <b>សរុប: 5 មុខងារ</b>",
             reply_markup=bb(),parse_mode=H); return END
 
     if d.startswith("copy_style_"):
@@ -131,13 +158,13 @@ async def text_style(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     btns+=[[IKB("✍️ ដំណើរការថ្មី",callback_data="menu_text_style")],HOME]
     await _edit(ctx,f"✍️ <b>Style ទាំងអស់សម្រាប់:</b> <code>{t}</code>\n━━━━━━━━━━━━\n\n"+"\n\n".join(rows)+"\n\n━━━━━━━━━━━━\n👇 ចុចប៊ូតុង ចម្លង Style:",InlineKeyboardMarkup(btns)); return S_STYLE
 
-# ── PDF ─────────────────────────────────────────────────────────────────────────
+# ── Image → PDF ──────────────────────────────────────────────────────────────────
 async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     p=u.message.photo[-1] if u.message.photo else None; dc=u.message.document if u.message.document else None
-    if not p and not dc: await _edit(ctx,"⚠️ សូម Upload រូបភាព!",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="back_main")])); return S_PDF
+    if not p and not dc: await _edit(ctx,"⚠️ សូម Upload រូបភាព!",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="menu_doc_tools")])); return S_PDF
     f=await ctx.bot.get_file(p.file_id if p else dc.file_id); ctx.user_data.setdefault("pdf_photos",[]).append(bytes(await f.download_as_bytearray()))
     n=len(ctx.user_data["pdf_photos"])
-    await _edit(ctx,f"✅ <b>រូបភាពទី {n} បានទទួល!</b>\n📤 Upload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="back_main")])); return S_PDF
+    await _edit(ctx,f"✅ <b>រូបភាពទី {n} បានទទួល!</b>\n📤 Upload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="menu_doc_tools")])); return S_PDF
 
 async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
     photos=ctx.user_data.get("pdf_photos",[])
@@ -150,8 +177,44 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
         else:   pdf.add_page("P",(210,297)); pw,ph=210,297
         ra=min(pw/w,ph/h); nw,nh=w*ra,h*ra; tmp=io.BytesIO(); img.save(tmp,format="JPEG",quality=90); tmp.seek(0); pdf.image(tmp,x=(pw-nw)/2,y=(ph-nh)/2,w=nw,h=nh)
     buf=io.BytesIO(bytes(pdf.output()))
-    msg=await q.message.reply_document(document=InputFile(buf,filename="KhmerBot.pdf"),caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ ចំនួន {len(photos)} ទំព័រ",reply_markup=InlineKeyboardMarkup([[IKB("🖼️ PDF ថ្មី",callback_data="menu_photo_pdf")],HOME]),parse_mode=H)
+    msg=await q.message.reply_document(document=InputFile(buf,filename="KhmerBot.pdf"),caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ ចំនួន {len(photos)} ទំព័រ",reply_markup=InlineKeyboardMarkup([[IKB("🖼️ PDF ថ្មី",callback_data="menu_photo_pdf")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]]),parse_mode=H)
     _save(ctx,msg); ctx.user_data["pdf_photos"]=[]; return END
+
+# ── PDF → PNG / JPG ──────────────────────────────────────────────────────────────
+async def pdf_to_img(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    dc=u.message.document
+    fmt=ctx.user_data.get("pdf2img_fmt","PNG")
+    if not dc or not (dc.file_name or "").lower().endswith(".pdf"):
+        await _edit(ctx,f"⚠️ <b>សូម Upload ឯកសារ PDF!</b>",mkb([IKB("❌ បោះបង់",callback_data="menu_doc_tools")])); return S_PDF2IMG
+    try:
+        await u.message.delete()
+        await _edit(ctx,f"⏳ <b>កំពុងបំប្លែង PDF → {fmt}...</b>",None)
+        raw=bytes(await (await ctx.bot.get_file(dc.file_id)).download_as_bytearray())
+        doc=fitz.open(stream=raw,filetype="pdf")
+        total=len(doc)
+        ext=fmt.lower(); pil_fmt="PNG" if fmt=="PNG" else "JPEG"
+        media=[]; dpi=150
+        for i,page in enumerate(doc):
+            mat=fitz.Matrix(dpi/72,dpi/72)
+            pix=page.get_pixmap(matrix=mat,alpha=False)
+            img=Image.frombytes("RGB",[pix.width,pix.height],pix.samples)
+            buf=io.BytesIO(); img.save(buf,format=pil_fmt,quality=90 if fmt=="JPG" else None); buf.seek(0)
+            media.append((buf,f"page_{i+1:02d}.{ext}"))
+        doc.close()
+        back_kb=InlineKeyboardMarkup([[IKB("🔄 PDF ថ្មី",callback_data=f"menu_pdf2{'png' if fmt=='PNG' else 'jpg'}")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]])
+        if total==1:
+            buf,name=media[0]
+            msg=await u.message.reply_document(document=InputFile(buf,filename=name),caption=f"✅ <b>បំប្លែងជោគជ័យ!</b>\n📄 1 ទំព័រ → {fmt}",reply_markup=back_kb,parse_mode=H)
+        else:
+            for idx,(buf,name) in enumerate(media):
+                cap=f"✅ <b>ទំព័រទី {idx+1}/{total}</b>" if idx<len(media)-1 else f"✅ <b>រួចរាល់! {total} ទំព័រ → {fmt}</b>"
+                kb=back_kb if idx==len(media)-1 else None
+                msg=await u.message.reply_document(document=InputFile(buf,filename=name),caption=cap,reply_markup=kb,parse_mode=H)
+        _save(ctx,msg)
+    except Exception as e:
+        logger.error(f"pdf2img error: {e}")
+        await _edit(ctx,"❌ <b>មានបញ្ហា! សូមព្យាយាមម្ដងទៀត</b>",mkb([IKB("❌ ត្រឡប់",callback_data="menu_doc_tools")]))
+    return END
 
 # ── Fallback ─────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -162,12 +225,14 @@ async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 # ── main ──────────────────────────────────────────────────────────────────────
 def main():
     app=Application.builder().token(BOT_TOKEN).connect_timeout(10).read_timeout(30).write_timeout(30).pool_timeout(10).build()
-    TXT=filters.TEXT&~filters.COMMAND; IMG=filters.PHOTO|filters.Document.IMAGE; CB_H=CallbackQueryHandler(cb)
+    TXT=filters.TEXT&~filters.COMMAND; IMG=filters.PHOTO|filters.Document.IMAGE
+    PDF=filters.Document.MimeType("application/pdf"); CB_H=CallbackQueryHandler(cb)
     app.add_handler(ConversationHandler(
         entry_points=[CommandHandler("start",cmd_start),CB_H],
         states={
-            S_STYLE: [MessageHandler(TXT,text_style), CB_H],
-            S_PDF:   [MessageHandler(IMG,pdf_photo),  CB_H],
+            S_STYLE:   [MessageHandler(TXT,text_style),  CB_H],
+            S_PDF:     [MessageHandler(IMG,pdf_photo),   CB_H],
+            S_PDF2IMG: [MessageHandler(PDF,pdf_to_img),  CB_H],
         },
         fallbacks=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
         per_message=False,allow_reentry=True,
