@@ -304,7 +304,7 @@ async def _show_world_clock(q):
         lines.append(f"{name}\n<code>{now.strftime('%H:%M:%S')}  {now.strftime('%d/%m/%Y')}</code>")
     await q.edit_message_text(
         "⏰ <b>World Clock</b>\n━━━━━━━━━━━━\n"+"\n\n".join(lines),
-        reply_markup=InlineKeyboardMarkup([[IKB("🔄 Refresh",callback_data="menu_wclock")],*_fun_nav("menu_wclock"),HOME]),
+        reply_markup=InlineKeyboardMarkup([[IKB("🔄 Refresh",callback_data="menu_wclock")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]]),
         parse_mode=H)
     return END
 
