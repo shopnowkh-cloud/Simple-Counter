@@ -49,9 +49,34 @@ BIM={**{chr(i):chr(i+0x1D468-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x
 SM={**{chr(i):chr(i+0x1D49C-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D4B6-0x61) for i in range(0x61,0x7B)}}
 DM={**{chr(i):chr(i+0x1D538-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D552-0x61) for i in range(0x61,0x7B)},**{chr(i):chr(i+0x1D7D8-0x30) for i in range(0x30,0x3A)}}
 SC={"a":"ᴀ","b":"ʙ","c":"ᴄ","d":"ᴅ","e":"ᴇ","f":"ꜰ","g":"ɢ","h":"ʜ","i":"ɪ","j":"ᴊ","k":"ᴋ","l":"ʟ","m":"ᴍ","n":"ɴ","o":"ᴏ","p":"ᴘ","q":"Q","r":"ʀ","s":"ꜱ","t":"ᴛ","u":"ᴜ","v":"ᴠ","w":"ᴡ","x":"x","y":"ʏ","z":"ᴢ"}
-BB={**{chr(i):chr(i+0x24B6-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x24D0-0x61) for i in range(0x61,0x7B)},**{"0":"⓪","1":"①","2":"②","3":"③","4":"④","5":"⑤","6":"⑥","7":"⑦","8":"⑧","9":"⑨"}}
+BB={**{chr(i):chr(i+0x24B6-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x24D0-0x61) for i in range(0x61,0x7B)},**{"0":"\u24ea","1":"\u2460","2":"\u2461","3":"\u2462","4":"\u2463","5":"\u2464","6":"\u2465","7":"\u2466","8":"\u2467","9":"\u2468"}}
 UD={"a":"ɐ","b":"q","c":"ɔ","d":"p","e":"ǝ","f":"ɟ","g":"ƃ","h":"ɥ","i":"ᴉ","j":"ɾ","k":"ʞ","l":"l","m":"ɯ","n":"u","o":"o","p":"d","q":"b","r":"ɹ","s":"s","t":"ʇ","u":"n","v":"ʌ","w":"ʍ","x":"x","y":"ʎ","z":"z","A":"∀","B":"ᗺ","C":"Ɔ","D":"ᗡ","E":"Ǝ","F":"Ⅎ","G":"פ","H":"H","I":"I","J":"ſ","K":"ʞ","L":"˥","M":"W","N":"N","O":"O","P":"Ԁ","Q":"Q","R":"ɹ","S":"S","T":"┴","U":"∩","V":"Λ","W":"M","X":"X","Y":"⅄","Z":"Z","0":"0","1":"Ɩ","2":"ᄅ","3":"Ɛ","4":"ᔭ","5":"ϛ","6":"9","7":"ㄥ","8":"8","9":"6"," ":" "}
-TS={"bold":("𝗕𝗼𝗹𝗱",lambda t:_t(t,BM)),"italic":("𝘐𝘵𝘢𝘭𝘪𝘤",lambda t:_t(t,IM)),"bold_italic":("𝑩𝒐𝒍𝒅 𝑰𝒕𝒂𝒍𝒊𝒄",lambda t:_t(t,BIM)),"script":("𝒮𝒸𝓇𝒾𝓅𝓉",lambda t:_t(t,SM)),"double":("𝔻𝕠𝕦𝕓𝕝𝕖",lambda t:_t(t,DM)),"small_caps":("Sᴍᴀʟʟ Cᴀᴘꜱ",lambda t:_t(t.lower(),SC)),"bubble":("Ⓑⓤⓑⓑⓛⓔ",lambda t:_t(t,BB)),"upside_down":("uʍop ǝpᴉsdn",lambda t:_t(t,UD)[::-1]),"strikethrough":("S\u0336t\u0336r\u0336i\u0336k\u0336e\u0336",lambda t:"".join(c+"\u0336" for c in t)),"underline":("U\u0332n\u0332d\u0332e\u0332r\u0332",lambda t:"".join(c+"\u0332" for c in t))}
+# ── new style maps ───────────────────────────────────────────────────────────────
+FM={**{chr(i):chr(i+0x1D504-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D51E-0x61) for i in range(0x61,0x7B)}}
+FM.update({"C":"\u212D","H":"\u210C","I":"\u2111","R":"\u211C","Z":"\u2128"})
+BSM={**{chr(i):chr(i+0x1D4D0-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D4EA-0x61) for i in range(0x61,0x7B)}}
+MOM={**{chr(i):chr(i+0x1D670-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D68A-0x61) for i in range(0x61,0x7B)},**{chr(i):chr(i+0x1D7F6-0x30) for i in range(0x30,0x3A)}}
+FW={**{chr(i):chr(i+0xFF21-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0xFF41-0x61) for i in range(0x61,0x7B)},**{chr(i):chr(i+0xFF10-0x30) for i in range(0x30,0x3A)}," ":"\u2003"}
+SFM={**{chr(i):chr(i+0x1D5A0-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D5BA-0x61) for i in range(0x61,0x7B)},**{chr(i):chr(i+0x1D7E2-0x30) for i in range(0x30,0x3A)}}
+SUPM={"a":"ᵃ","b":"ᵇ","c":"ᶜ","d":"ᵈ","e":"ᵉ","f":"ᶠ","g":"ᵍ","h":"ʰ","i":"ⁱ","j":"ʲ","k":"ᵏ","l":"ˡ","m":"ᵐ","n":"ⁿ","o":"ᵒ","p":"ᵖ","q":"q","r":"ʳ","s":"ˢ","t":"ᵗ","u":"ᵘ","v":"ᵛ","w":"ʷ","x":"ˣ","y":"ʸ","z":"ᶻ","A":"ᴬ","B":"ᴮ","C":"ᶜ","D":"ᴰ","E":"ᴱ","F":"ᶠ","G":"ᴳ","H":"ᴴ","I":"ᴵ","J":"ᴶ","K":"ᴷ","L":"ᴸ","M":"ᴹ","N":"ᴺ","O":"ᴼ","P":"ᴾ","Q":"Q","R":"ᴿ","S":"ˢ","T":"ᵀ","U":"ᵁ","V":"\u2c7d","W":"ᵂ","X":"ˣ","Y":"ʸ","Z":"ᶻ","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"}
+TS={
+    "bold":         ("\U0001d401\U0001d42c\U0001d425\U0001d41d",          lambda t:_t(t,BM)),
+    "italic":       ("\U0001d43c\U0001d461\U0001d44e\U0001d459\U0001d456\U0001d450",  lambda t:_t(t,IM)),
+    "bold_italic":  ("\U0001d469\U0001d48c\U0001d485\U0001d47a\U0001d479\U0001d478 \U0001d470\U0001d493\U0001d48e\U0001d482\U0001d480\U0001d486", lambda t:_t(t,BIM)),
+    "script":       ("\U0001d4ee\U0001d4ec\U0001d4fb\U0001d4f2\U0001d4f9\U0001d4fd",  lambda t:_t(t,SM)),
+    "bold_script":  ("\U0001d4eb\U0001d4f8\U0001d4f5\U0001d4ed \U0001d4e2\U0001d4ec\U0001d4fb\U0001d4f2\U0001d4f9\U0001d4fd", lambda t:_t(t,BSM)),
+    "double":       ("\U0001d53b\U0001d56c\U0001d544\U0001d553\U0001d55b\U0001d55f",  lambda t:_t(t,DM)),
+    "gothic":       ("\U0001d50a\U0001d52c\U0001d531\U0001d525\U0001d526\U0001d520",  lambda t:_t(t,FM)),
+    "sans":         ("\U0001d5a6\U0001d5be\U0001d5bb\U0001d5ba",          lambda t:_t(t,SFM)),
+    "mono":         ("\U0001d67c\U0001d68e\U0001d68b\U0001d682\U0001d68e", lambda t:_t(t,MOM)),
+    "fullwidth":    ("\uff26\uff55\uff4c\uff4c\uff57\uff49\uff44\uff54\uff48",         lambda t:_t(t,FW)),
+    "superscript":  ("\u1d38\u1d49\u02e1\u02e1\u1d52",                   lambda t:_t(t,SUPM)),
+    "small_caps":   ("S\u1d0aC\u1d04",                                    lambda t:_t(t.lower(),SC)),
+    "bubble":       ("\u24b6\u24d1\u24d1\u24d1\u24d1\u24d4",              lambda t:_t(t,BB)),
+    "upside_down":  ("u\u028dop \u01ddp\u1d09sd\u0183",                   lambda t:_t(t,UD)[::-1]),
+    "strikethrough":("S\u0336t\u0336r\u0336i\u0336k\u0336e\u0336",        lambda t:"".join(c+"\u0336" for c in t)),
+    "underline":    ("U\u0332n\u0332d\u0332e\u0332r\u0332",               lambda t:"".join(c+"\u0332" for c in t)),
+}
 
 # ── /start ──────────────────────────────────────────────────────────────────────
 async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
