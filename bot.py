@@ -14,7 +14,7 @@ logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging
 logger=logging.getLogger(__name__)
 
 (S_STYLE,S_PDF,S_CALC,S_PASS,S_PICK,S_MORSE,S_B64,
- S_COUNT,S_NBASE,S_TEMP,S_HASH,S_DATE,S_UNIT,S_BMI,S_LOAN,S_LUCK)=range(16)
+ S_NBASE,S_TEMP,S_HASH,S_DATE,S_UNIT,S_BMI,S_LOAN,S_LUCK)=range(15)
 H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── keyboards ───────────────────────────────────────────────────────────────────
@@ -23,7 +23,7 @@ def bb(): return mkb([IKB("🏠 ម៉ឺនុយមេ",callback_data="back_ma
 def bc(): return mkb([IKB("❌ បោះបង់",callback_data="back_main")])
 HOME=[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
 def _text_nav(excl=None):
-    b=[IKB("✍️ Style",callback_data="menu_text_style"),IKB("🖼️ PDF",callback_data="menu_photo_pdf"),IKB("📝 Count",callback_data="menu_count"),IKB("📡 Morse",callback_data="menu_morse")]
+    b=[IKB("✍️ Style",callback_data="menu_text_style"),IKB("🖼️ PDF",callback_data="menu_photo_pdf"),IKB("📡 Morse",callback_data="menu_morse")]
     r=[x for x in b if x.callback_data!=excl]; return [r[i:i+2] for i in range(0,len(r),2)]
 def _math_nav(excl=None):
     b=[IKB("🔢 Calc",callback_data="menu_calculator"),IKB("🌡️ Temp",callback_data="menu_temp"),IKB("🔢 Base",callback_data="menu_nbase"),IKB("📏 Unit",callback_data="menu_unit"),IKB("📐 BMI",callback_data="menu_bmi"),IKB("💰 Loan",callback_data="menu_loan")]
@@ -37,7 +37,7 @@ def _fun_nav(excl=None):
 def mm():
     return mkb(
         [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
-        [IKB("📝 រាប់អក្សរ",callback_data="menu_count"),             IKB("📡 កូដ Morse",callback_data="menu_morse")],
+        [IKB("📡 កូដ Morse",callback_data="menu_morse")],
         [IKB("🔢 ម៉ាស៊ីនគណនា",callback_data="menu_calculator"),  IKB("🌡️ សីតុណ្ហភាព",callback_data="menu_temp")],
         [IKB("🔢 ប្ដូរគោលលេខ",callback_data="menu_nbase"),       IKB("📏 ប្ដូរឯកតា",callback_data="menu_unit")],
         [IKB("📐 BMI Calculator",callback_data="menu_bmi"),        IKB("💰 គណនាការប្រាក់",callback_data="menu_loan")],
@@ -114,8 +114,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text("🔒 <b>Base64</b>\n\nសូមជ្រើសរើស៖",reply_markup=mkb([IKB("🔐 Encode",callback_data="b64_encode"),IKB("🔓 Decode",callback_data="b64_decode")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_B64
     if d=="b64_encode": ctx.user_data["b64_dir"]="encode"; await q.edit_message_text("🔐 <b>Base64 Encode</b>\n\n✏️ សូមវាយ Text ត្រូវ Encode៖",reply_markup=bc(),parse_mode=H); return S_B64
     if d=="b64_decode": ctx.user_data["b64_dir"]="decode"; await q.edit_message_text("🔓 <b>Base64 Decode</b>\n\n✏️ សូមវាយ Base64 ត្រូវ Decode៖",reply_markup=bc(),parse_mode=H); return S_B64
-    if d=="menu_count":
-        await q.edit_message_text("📝 <b>រាប់អក្សរ</b>\n\n✏️ សូមវាយ ឬ បិទ​ភ្ជាប់ Text ណាមួយ៖",reply_markup=bc(),parse_mode=H); return S_COUNT
+
     if d=="menu_nbase":
         await q.edit_message_text("🔢 <b>ប្ដូរគោលលេខ</b>\n\nសូមជ្រើសរើស Input ៖",reply_markup=mkb([IKB("🔟 លេខ10",callback_data="nbase_dec"),IKB("2️⃣ លេខ2",callback_data="nbase_bin")],[IKB("8️⃣ លេខ8",callback_data="nbase_oct"),IKB("🔡 Hex",callback_data="nbase_hex")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_NBASE
     if d in("nbase_dec","nbase_bin","nbase_oct","nbase_hex"):
@@ -403,31 +402,6 @@ async def b64(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     em="🔐" if d=="encode" else"🔓"
     await _edit(ctx,f"{em} <b>Base64 {h}</b>\n━━━━━━━━━━━━\n📥 Input:\n<code>{t[:200]}</code>\n\n{'❌' if err else '📤'} លទ្ធផល:\n<code>{r[:1000]}</code>",InlineKeyboardMarkup([[IKB("🔄 Base64 ថ្មី",callback_data="menu_base64")],HOME])); return END
 
-# ── Text Counter ────────────────────────────────────────────────────────────────
-async def count_text(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text; await u.message.delete()
-    chars=len(t); chars_no_space=len(t.replace(" ","").replace("\n",""))
-    words=len(t.split()); lines=t.count("\n")+1
-    sentences=len(re.findall(r'[.!?។]+',t)) or 0
-    emojis=len(re.findall(r'[\U0001F000-\U0001FFFF]|[\U00002600-\U000027FF]',t))
-    khmer=len(re.findall(r'[\u1780-\u17FF]',t))
-    latin=len(re.findall(r'[a-zA-Z]',t))
-    digits=len(re.findall(r'\d',t))
-    size_b=len(t.encode('utf-8'))
-    await _edit(ctx,
-        f"📝 <b>លទ្ធផលរាប់អក្សរ</b>\n━━━━━━━━━━━━\n"
-        f"🔤 តួអក្សរ (សរុប): <b>{chars:,}</b>\n"
-        f"🔡 តួអក្សរ (គ្មានចន្លោះ): <b>{chars_no_space:,}</b>\n"
-        f"📖 ពាក្យ: <b>{words:,}</b>\n"
-        f"📄 បន្ទាត់: <b>{lines:,}</b>\n"
-        f"❓ ប្រយោគ: <b>{sentences}</b>\n"
-        f"━━━━━━━━━━━━\n"
-        f"🇰🇭 អក្សរខ្មែរ: <b>{khmer:,}</b>\n"
-        f"🔤 Latin: <b>{latin:,}</b>\n"
-        f"🔢 លេខ: <b>{digits:,}</b>\n"
-        f"😊 Emoji: <b>{emojis}</b>\n"
-        f"💾 ទំហំ: <b>{size_b:,} bytes</b>",
-        InlineKeyboardMarkup([HOME])); return END
 
 # ── Number Base Converter ────────────────────────────────────────────────────────
 async def nbase_convert(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -652,7 +626,7 @@ def main():
             S_PICK:  [MessageHandler(TXT,picker),     CB_H],
             S_MORSE: [MessageHandler(TXT,morse),      CB_H],
             S_B64:   [MessageHandler(TXT,b64),        CB_H],
-            S_COUNT: [MessageHandler(TXT,count_text), CB_H],
+
             S_NBASE: [MessageHandler(TXT,nbase_convert),CB_H],
             S_TEMP:  [MessageHandler(TXT,temp_convert),CB_H],
             S_HASH:  [MessageHandler(TXT,hash_gen),   CB_H],
