@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os,re,math,base64,random,string,logging,warnings,hashlib
+import os,io,re,math,base64,random,string,logging,warnings,hashlib
+from PIL import Image; from fpdf import FPDF
 from datetime import datetime,date,timezone; from dateutil.relativedelta import relativedelta
 import zoneinfo
-from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup
+from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup,InputFile
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode; from telegram.warnings import PTBUserWarning
 warnings.filterwarnings("ignore",category=PTBUserWarning)
@@ -12,8 +13,8 @@ if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណ�
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
 
-(S_CALC,S_PASS,S_PICK,S_B64,
- S_NBASE,S_TEMP,S_HASH,S_DATE,S_UNIT,S_BMI,S_LOAN,S_LUCK)=range(12)
+(S_STYLE,S_PDF,S_CALC,S_PASS,S_PICK,S_MORSE,S_B64,
+ S_COUNT,S_NBASE,S_TEMP,S_HASH,S_DATE,S_UNIT,S_BMI,S_LOAN,S_LUCK)=range(16)
 H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── keyboards ───────────────────────────────────────────────────────────────────
@@ -21,6 +22,9 @@ def mkb(*r): return InlineKeyboardMarkup(list(r))
 def bb(): return mkb([IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])
 def bc(): return mkb([IKB("❌ បោះបង់",callback_data="back_main")])
 HOME=[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
+def _text_nav(excl=None):
+    b=[IKB("✍️ Style",callback_data="menu_text_style"),IKB("🖼️ PDF",callback_data="menu_photo_pdf"),IKB("📝 Count",callback_data="menu_count"),IKB("📡 Morse",callback_data="menu_morse")]
+    r=[x for x in b if x.callback_data!=excl]; return [r[i:i+2] for i in range(0,len(r),2)]
 def _math_nav(excl=None):
     b=[IKB("🔢 Calc",callback_data="menu_calculator"),IKB("🌡️ Temp",callback_data="menu_temp"),IKB("🔢 Base",callback_data="menu_nbase"),IKB("📏 Unit",callback_data="menu_unit"),IKB("📐 BMI",callback_data="menu_bmi"),IKB("💰 Loan",callback_data="menu_loan")]
     r=[x for x in b if x.callback_data!=excl]; return [r[i:i+3] for i in range(0,len(r),3)]
@@ -32,6 +36,10 @@ def _fun_nav(excl=None):
     r=[x for x in b if x.callback_data!=excl]; return [r[i:i+2] for i in range(0,len(r),2)]
 def mm():
     return mkb(
+        # ── 🟣 Text & Document ──
+        [IKB("🟣  TEXT & DOCUMENT",callback_data="noop")],
+        [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
+        [IKB("📝 រាប់អក្សរ",callback_data="menu_count"),             IKB("📡 កូដ Morse",callback_data="menu_morse")],
         # ── 🟢 Math & Convert ──
         [IKB("🟢  MATH & CONVERT",callback_data="noop")],
         [IKB("🔢 ម៉ាស៊ីនគណនា",callback_data="menu_calculator"),  IKB("🌡️ សីតុណ្ហភាព",callback_data="menu_temp")],
@@ -57,6 +65,22 @@ async def _edit(ctx,text,kb=None):
         except Exception: pass
 def _save(ctx,msg): ctx.user_data["cid"]=msg.chat_id; ctx.user_data["mid"]=msg.message_id
 
+# ── text style maps ─────────────────────────────────────────────────────────────
+def _t(t,m): return "".join(m.get(c,c) for c in t)
+BM={**{chr(i):chr(i+0x1D400-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D41A-0x61) for i in range(0x61,0x7B)},**{chr(i):chr(i+0x1D7CE-0x30) for i in range(0x30,0x3A)}}
+IM={**{chr(i):chr(i+0x1D434-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D44E-0x61) for i in range(0x61,0x7B)}}
+BIM={**{chr(i):chr(i+0x1D468-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D482-0x61) for i in range(0x61,0x7B)}}
+SM={**{chr(i):chr(i+0x1D49C-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D4B6-0x61) for i in range(0x61,0x7B)}}
+DM={**{chr(i):chr(i+0x1D538-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x1D552-0x61) for i in range(0x61,0x7B)},**{chr(i):chr(i+0x1D7D8-0x30) for i in range(0x30,0x3A)}}
+SC={"a":"ᴀ","b":"ʙ","c":"ᴄ","d":"ᴅ","e":"ᴇ","f":"ꜰ","g":"ɢ","h":"ʜ","i":"ɪ","j":"ᴊ","k":"ᴋ","l":"ʟ","m":"ᴍ","n":"ɴ","o":"ᴏ","p":"ᴘ","q":"Q","r":"ʀ","s":"ꜱ","t":"ᴛ","u":"ᴜ","v":"ᴠ","w":"ᴡ","x":"x","y":"ʏ","z":"ᴢ"}
+BB={**{chr(i):chr(i+0x24B6-0x41) for i in range(0x41,0x5B)},**{chr(i):chr(i+0x24D0-0x61) for i in range(0x61,0x7B)},**{"0":"⓪","1":"①","2":"②","3":"③","4":"④","5":"⑤","6":"⑥","7":"⑦","8":"⑧","9":"⑨"}}
+UD={"a":"ɐ","b":"q","c":"ɔ","d":"p","e":"ǝ","f":"ɟ","g":"ƃ","h":"ɥ","i":"ᴉ","j":"ɾ","k":"ʞ","l":"l","m":"ɯ","n":"u","o":"o","p":"d","q":"b","r":"ɹ","s":"s","t":"ʇ","u":"n","v":"ʌ","w":"ʍ","x":"x","y":"ʎ","z":"z","A":"∀","B":"ᗺ","C":"Ɔ","D":"ᗡ","E":"Ǝ","F":"Ⅎ","G":"פ","H":"H","I":"I","J":"ſ","K":"ʞ","L":"˥","M":"W","N":"N","O":"O","P":"Ԁ","Q":"Q","R":"ɹ","S":"S","T":"┴","U":"∩","V":"Λ","W":"M","X":"X","Y":"⅄","Z":"Z","0":"0","1":"Ɩ","2":"ᄅ","3":"Ɛ","4":"ᔭ","5":"ϛ","6":"9","7":"ㄥ","8":"8","9":"6"," ":" "}
+TS={"bold":("𝗕𝗼𝗹𝗱",lambda t:_t(t,BM)),"italic":("𝘐𝘵𝘢𝘭𝘪𝘤",lambda t:_t(t,IM)),"bold_italic":("𝑩𝒐𝒍𝒅 𝑰𝒕𝒂𝒍𝒊𝒄",lambda t:_t(t,BIM)),"script":("𝒮𝒸𝓇𝒾𝓅𝓉",lambda t:_t(t,SM)),"double":("𝔻𝕠𝕦𝕓𝕝𝕖",lambda t:_t(t,DM)),"small_caps":("Sᴍᴀʟʟ Cᴀᴘꜱ",lambda t:_t(t.lower(),SC)),"bubble":("Ⓑⓤⓑⓑⓛⓔ",lambda t:_t(t,BB)),"upside_down":("uʍop ǝpᴉsdn",lambda t:_t(t,UD)[::-1]),"strikethrough":("S̶t̶r̶i̶k̶e̶",lambda t:"".join(c+"̶" for c in t)),"underline":("U̲n̲d̲e̲r̲",lambda t:"".join(c+"̲" for c in t))}
+MO={"A":".-","B":"-...","C":"-.-.","D":"-..","E":".","F":"..-.","G":"--.","H":"....","I":"..","J":".---","K":"-.-","L":".-..","M":"--","N":"-.","O":"---","P":".--.","Q":"--.-","R":".-.","S":"...","T":"-","U":"..-","V":"...-","W":".--","X":"-..-","Y":"-.--","Z":"--..","0":"-----","1":".----","2":"..---","3":"...--","4":"....-","5":".....","6":"-....","7":"--...","8":"---..","9":"----."," ":"/"}
+MR={v:k for k,v in MO.items()}
+def t2m(t): return " ".join(MO.get(c.upper(),"?") for c in t)
+def m2t(m): return "".join(MR.get(w,"?") for w in m.strip().split(" "))
+
 KH_DAYS=["ច័ន្ទ","អង្គារ","ពុធ","ព្រហស្បតិ៍","សុក្រ","សៅរ៍","អាទិត្យ"]
 KH_MONTHS=["មករា","កុម្ភៈ","មីនា","មេសា","ឧសភា","មិថុនា","កក្កដា","សីហា","កញ្ញា","តុលា","វិច្ឆិកា","ធ្នូ"]
 
@@ -68,8 +92,8 @@ async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         "┌─────────────────────────┐\n"
         "│  🤖 <b>Khmer Multi-Tool Bot</b> 🇰🇭  │\n"
         "└─────────────────────────┘\n"
-        "🟢 Math & Convert  🔴 Security\n"
-        "🟡 Fun & Utility\n"
+        "🟣 Text & Doc  🟢 Math & Convert\n"
+        "🔴 Security  🟡 Fun & Utility\n"
         "──────────────────────────\n"
         "👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",
         reply_markup=mm(),parse_mode=H)
@@ -87,21 +111,32 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "┌─────────────────────────┐\n"
             "│  🤖 <b>Khmer Multi-Tool Bot</b> 🇰🇭  │\n"
             "└─────────────────────────┘\n"
-            "🟢 Math & Convert  🔴 Security\n"
-            "🟡 Fun & Utility\n"
+            "🟣 Text & Doc  🟢 Math & Convert\n"
+            "🔴 Security  🟡 Fun & Utility\n"
             "──────────────────────────\n"
             "👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",
             reply_markup=mm(),parse_mode=H); return END
+    if d=="menu_text_style":
+        await q.edit_message_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ សូមវាយ <b>អក្សរឡាតាំង</b>៖\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=bc(),parse_mode=H); return S_STYLE
+    if d=="menu_photo_pdf":
+        ctx.user_data["pdf_photos"]=[]
+        await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n\n📤 Upload រូបភាព (អាចច្រើន)\n✅ ចប់ → ចុច <b>បង្កើត PDF</b>",reply_markup=mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="back_main")]),parse_mode=H); return S_PDF
     if d=="menu_calculator":
         ctx.user_data["calc_expr"]=""; await _calc_show(q,ctx); return S_CALC
     if d=="menu_password":
         await q.edit_message_text("🔐 <b>ពិនិត្យ Password</b>\n\n✏️ សូមវាយ Password ចង់ពិនិត្យ៖",reply_markup=bc(),parse_mode=H); return S_PASS
     if d=="menu_picker":
         await q.edit_message_text("🎲 <b>Random Picker</b>\n\n✏️ វាយជម្រើសដោយដាក់ , ចន្លោះ៖\n<code>ក, ខ, គ, ឃ</code>",reply_markup=bc(),parse_mode=H); return S_PICK
+    if d=="menu_morse":
+        await q.edit_message_text("📡 <b>កូដ Morse</b>\n\nសូមជ្រើសរើសទិសដៅ៖",reply_markup=mkb([IKB("🔤 អក្សរ → Morse",callback_data="morse_to"),IKB("📡 Morse → អក្សរ",callback_data="morse_from")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_MORSE
+    if d=="morse_to":   ctx.user_data["morse_dir"]="to";   await q.edit_message_text("📡 <b>អក្សរ → Morse</b>\n\n✏️ សូមវាយអក្សរ (English)៖",reply_markup=bc(),parse_mode=H); return S_MORSE
+    if d=="morse_from": ctx.user_data["morse_dir"]="from"; await q.edit_message_text("📡 <b>Morse → អក្សរ</b>\n\n✏️ សូមវាយ Morse Code៖\n<code>-- --- .-. ... .</code>",reply_markup=bc(),parse_mode=H); return S_MORSE
     if d=="menu_base64":
         await q.edit_message_text("🔒 <b>Base64</b>\n\nសូមជ្រើសរើស៖",reply_markup=mkb([IKB("🔐 Encode",callback_data="b64_encode"),IKB("🔓 Decode",callback_data="b64_decode")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_B64
     if d=="b64_encode": ctx.user_data["b64_dir"]="encode"; await q.edit_message_text("🔐 <b>Base64 Encode</b>\n\n✏️ សូមវាយ Text ត្រូវ Encode៖",reply_markup=bc(),parse_mode=H); return S_B64
     if d=="b64_decode": ctx.user_data["b64_dir"]="decode"; await q.edit_message_text("🔓 <b>Base64 Decode</b>\n\n✏️ សូមវាយ Base64 ត្រូវ Decode៖",reply_markup=bc(),parse_mode=H); return S_B64
+    if d=="menu_count":
+        await q.edit_message_text("📝 <b>រាប់អក្សរ</b>\n\n✏️ សូមវាយ ឬ បិទ​ភ្ជាប់ Text ណាមួយ៖",reply_markup=bc(),parse_mode=H); return S_COUNT
     if d=="menu_nbase":
         await q.edit_message_text("🔢 <b>ប្ដូរគោលលេខ</b>\n\nសូមជ្រើសរើស Input ៖",reply_markup=mkb([IKB("🔟 លេខ10",callback_data="nbase_dec"),IKB("2️⃣ លេខ2",callback_data="nbase_bin")],[IKB("8️⃣ លេខ8",callback_data="nbase_oct"),IKB("🔡 Hex",callback_data="nbase_hex")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_NBASE
     if d in("nbase_dec","nbase_bin","nbase_oct","nbase_hex"):
