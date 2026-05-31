@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os, io, re, math, base64, random, logging, qrcode, cv2, numpy as np
+import os, io, re, math, base64, random, logging, warnings, qrcode, cv2, numpy as np
 from PIL import Image
 from pyzbar.pyzbar import decode as pyzbar_decode
 from fpdf import FPDF
@@ -8,6 +8,9 @@ from datetime import datetime
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, ConversationHandler, ContextTypes, filters
 from telegram.constants import ParseMode
+from telegram.warnings import PTBUserWarning
+
+warnings.filterwarnings("ignore", category=PTBUserWarning)
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 if not BOT_TOKEN:
@@ -117,7 +120,7 @@ async def callback_router(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text("🔓 <b>Base64 Decode</b>\n\n✏️ វាយ Base64 ត្រូវ Decode:", reply_markup=back_cancel(), parse_mode=H); return S_B64
     if d == "menu_about":
         await q.edit_message_text(
-            f"ℹ️ <b>អំពី Bot</b>\n\n🤖 <b>Khmer Multi-Tool Bot v2.0</b>\n━━━━━━━━━━━━━━━━━━━━\n📅 ថ្ងៃនេះ: <code>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</code>\n👨‍💻 Developer: <b>limsovannrady</b>\n🐍 Python: <b>python-telegram-bot 20.x</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Libraries:</b>\n  • qrcode — QR Generator\n  • pyzbar — QR Scanner\n  • fpdf2  — PDF Creator\n  • Pillow — Image Tools\n  • opencv — CV Tools",
+            f"ℹ️ <b>អំពី Bot</b>\n\n🤖 <b>Khmer Multi-Tool Bot v2.0</b>\n━━━━━━━━━━━━━━━━━━━━\n📅 ថ្ងៃនេះ: <code>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</code>\n👨‍💻 Developer: <b>limsovannrady</b>\n🐍 Python: <b>python-telegram-bot 21.x</b>\n━━━━━━━━━━━━━━━━━━━━\n📦 <b>Libraries:</b>\n  • qrcode — QR Generator\n  • pyzbar — QR Scanner\n  • fpdf2  — PDF Creator\n  • Pillow — Image Tools\n  • opencv — CV Tools",
             reply_markup=back_btn(), parse_mode=H)
         return ConversationHandler.END
     if d.startswith("calc_"): return await _handle_calc(q, ctx, d)
@@ -255,7 +258,15 @@ async def fallback_handler(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("🤔 <b>ខ្ញុំមិនយល់ Command!</b>\n\n👇 ចុចប៊ូតុងខាងក្រោម ឬ វាយ /start:", reply_markup=main_menu_keyboard(), parse_mode=ParseMode.HTML)
 
 def main():
-    app = Application.builder().token(BOT_TOKEN).build()
+    app = (
+        Application.builder()
+        .token(BOT_TOKEN)
+        .connect_timeout(10)
+        .read_timeout(30)
+        .write_timeout(30)
+        .pool_timeout(10)
+        .build()
+    )
     conv = ConversationHandler(
         entry_points=[CommandHandler("start", cmd_start), CallbackQueryHandler(callback_router)],
         states={
