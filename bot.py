@@ -260,18 +260,30 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             reply_markup=mkb([IKB("🔄 ថ្មីម្ដងទៀត",callback_data="dice_lucky")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return END
 
     if d=="menu_about":
+        import telegram as _tg
+        ptb_ver=_tg.__version__
+        import sys
+        py_ver=sys.version.split()[0]
         await q.edit_message_text(
-            f"ℹ️ <b>Khmer Multi-Tool Bot v4.0</b>\n━━━━━━━━━━━━━━━━━━━━\n"
-            f"📅 <code>{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</code>\n"
-            "👨‍💻 អ្នកបង្កើត: <b>limsovannrady</b>\n"
-            "🐍 python-telegram-bot\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "📦 qrcode • pyzbar • fpdf2 • Pillow\n"
-            "   opencv • hashlib • dateutil\n"
-            "━━━━━━━━━━━━━━━━━━━━\n"
-            "🆕 មុខងារថ្មី v4:\n"
-            "🔑 Password Gen • 📏 Unit Converter\n"
-            "📐 BMI • ⏰ World Clock • 💰 Loan • 🎲 Dice",
+            f"ℹ️ <b>Khmer Multi-Tool Bot</b>\n"
+            f"┌─────────────────────────┐\n"
+            f"│  🔖 Version: <b>4.0</b>  │  🇰🇭 Khmer  │\n"
+            f"└─────────────────────────┘\n"
+            f"📅 <code>{datetime.now().strftime('%Y-%m-%d  %H:%M:%S')}</code>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🐍 Python: <b>{py_ver}</b>\n"
+            f"📡 python-telegram-bot: <b>{ptb_ver}</b>\n"
+            f"🤖 Telegram Bot API: <b>9.0 ✅</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"📦 <b>Libraries:</b>\n"
+            f"   qrcode • pyzbar • fpdf2\n"
+            f"   Pillow • opencv • numpy\n"
+            f"   hashlib • dateutil • zoneinfo\n"
+            f"━━━━━━━━━━━━━━━━━━━━\n"
+            f"🔵 QR Tools (2)  🟣 Text & Doc (4)\n"
+            f"🟢 Math & Convert (6)  🔴 Security (4)\n"
+            f"🟡 Fun & Utility (4)\n"
+            f"📊 <b>សរុប: 20 មុខងារ</b>",
             reply_markup=bb(),parse_mode=H); return END
     if d.startswith("calc_"): return await _calc_btn(q,ctx,d)
     if d.startswith("copy_style_"):
