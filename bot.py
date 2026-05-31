@@ -117,7 +117,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ សូមវាយ <b>អក្សរឡាតាំង</b>៖\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=bc(),parse_mode=H); return S_STYLE
     if d=="menu_photo_pdf":
         ctx.user_data["pdf_photos"]=[]
-        await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n\n📤 Upload រូបភាព (អាចច្រើន)\n✅ ចប់ → ចុច <b>បង្កើត PDF</b>",reply_markup=mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="back_main")]),parse_mode=H); return S_PDF
+        await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n\n📤 Upload រូបភាព (អាចច្រើន)\n✅ ចប់ → ចុច <b>បង្កើត PDF</b>",reply_markup=mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done",style=SUCCESS),IKB("❌ បោះបង់",callback_data="back_main",style=DANGER)]),parse_mode=H); return S_PDF
     if d=="menu_calculator":
         ctx.user_data["calc_expr"]=""; await _calc_show(q,ctx); return S_CALC
     if d=="menu_password":
@@ -125,23 +125,23 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if d=="menu_picker":
         await q.edit_message_text("🎲 <b>Random Picker</b>\n\n✏️ វាយជម្រើសដោយដាក់ , ចន្លោះ៖\n<code>ក, ខ, គ, ឃ</code>",reply_markup=bc(),parse_mode=H); return S_PICK
     if d=="menu_morse":
-        await q.edit_message_text("📡 <b>កូដ Morse</b>\n\nសូមជ្រើសរើសទិសដៅ៖",reply_markup=mkb([IKB("🔤 អក្សរ → Morse",callback_data="morse_to"),IKB("📡 Morse → អក្សរ",callback_data="morse_from")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_MORSE
+        await q.edit_message_text("📡 <b>កូដ Morse</b>\n\nសូមជ្រើសរើសទិសដៅ៖",reply_markup=mkb([IKB("🔤 អក្សរ → Morse",callback_data="morse_to",style=PRIMARY),IKB("📡 Morse → អក្សរ",callback_data="morse_from",style=PRIMARY)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),parse_mode=H); return S_MORSE
     if d=="morse_to":   ctx.user_data["morse_dir"]="to";   await q.edit_message_text("📡 <b>អក្សរ → Morse</b>\n\n✏️ សូមវាយអក្សរ (English)៖",reply_markup=bc(),parse_mode=H); return S_MORSE
     if d=="morse_from": ctx.user_data["morse_dir"]="from"; await q.edit_message_text("📡 <b>Morse → អក្សរ</b>\n\n✏️ សូមវាយ Morse Code៖\n<code>-- --- .-. ... .</code>",reply_markup=bc(),parse_mode=H); return S_MORSE
     if d=="menu_base64":
-        await q.edit_message_text("🔒 <b>Base64</b>\n\nសូមជ្រើសរើស៖",reply_markup=mkb([IKB("🔐 Encode",callback_data="b64_encode"),IKB("🔓 Decode",callback_data="b64_decode")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_B64
+        await q.edit_message_text("🔒 <b>Base64</b>\n\nសូមជ្រើសរើស៖",reply_markup=mkb([IKB("🔐 Encode",callback_data="b64_encode",style=DANGER),IKB("🔓 Decode",callback_data="b64_decode",style=DANGER)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),parse_mode=H); return S_B64
     if d=="b64_encode": ctx.user_data["b64_dir"]="encode"; await q.edit_message_text("🔐 <b>Base64 Encode</b>\n\n✏️ សូមវាយ Text ត្រូវ Encode៖",reply_markup=bc(),parse_mode=H); return S_B64
     if d=="b64_decode": ctx.user_data["b64_dir"]="decode"; await q.edit_message_text("🔓 <b>Base64 Decode</b>\n\n✏️ សូមវាយ Base64 ត្រូវ Decode៖",reply_markup=bc(),parse_mode=H); return S_B64
     if d=="menu_count":
         await q.edit_message_text("📝 <b>រាប់អក្សរ</b>\n\n✏️ សូមវាយ ឬ បិទ​ភ្ជាប់ Text ណាមួយ៖",reply_markup=bc(),parse_mode=H); return S_COUNT
     if d=="menu_nbase":
-        await q.edit_message_text("🔢 <b>ប្ដូរគោលលេខ</b>\n\nសូមជ្រើសរើស Input ៖",reply_markup=mkb([IKB("🔟 លេខ10",callback_data="nbase_dec"),IKB("2️⃣ លេខ2",callback_data="nbase_bin")],[IKB("8️⃣ លេខ8",callback_data="nbase_oct"),IKB("🔡 Hex",callback_data="nbase_hex")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_NBASE
+        await q.edit_message_text("🔢 <b>ប្ដូរគោលលេខ</b>\n\nសូមជ្រើសរើស Input ៖",reply_markup=mkb([IKB("🔟 លេខ10",callback_data="nbase_dec",style=SUCCESS),IKB("2️⃣ លេខ2",callback_data="nbase_bin",style=SUCCESS)],[IKB("8️⃣ លេខ8",callback_data="nbase_oct",style=SUCCESS),IKB("🔡 Hex",callback_data="nbase_hex",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),parse_mode=H); return S_NBASE
     if d in("nbase_dec","nbase_bin","nbase_oct","nbase_hex"):
         nm={"nbase_dec":"លេខ១០","nbase_bin":"លេខ២","nbase_oct":"លេខ៨","nbase_hex":"Hex"}
         ctx.user_data["nbase_from"]=d.split("_")[1]
         await q.edit_message_text(f"🔢 <b>ប្ដូរពី {nm[d]}</b>\n\n✏️ សូមវាយលេខ៖",reply_markup=bc(),parse_mode=H); return S_NBASE
     if d=="menu_temp":
-        await q.edit_message_text("🌡️ <b>ប្ដូរសីតុណ្ហភាព</b>\n\nសូមជ្រើស Input ៖",reply_markup=mkb([IKB("🌡 Celsius (°C)",callback_data="temp_c"),IKB("🌡 Fahrenheit (°F)",callback_data="temp_f")],[IKB("🌡 Kelvin (K)",callback_data="temp_k")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return S_TEMP
+        await q.edit_message_text("🌡️ <b>ប្ដូរសីតុណ្ហភាព</b>\n\nសូមជ្រើស Input ៖",reply_markup=mkb([IKB("🌡 Celsius (°C)",callback_data="temp_c",style=SUCCESS),IKB("🌡 Fahrenheit (°F)",callback_data="temp_f",style=SUCCESS)],[IKB("🌡 Kelvin (K)",callback_data="temp_k",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),parse_mode=H); return S_TEMP
     if d in("temp_c","temp_f","temp_k"):
         ctx.user_data["temp_from"]=d.split("_")[1]
         lbl={"temp_c":"Celsius °C","temp_f":"Fahrenheit °F","temp_k":"Kelvin K"}
