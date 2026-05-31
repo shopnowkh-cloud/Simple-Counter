@@ -25,6 +25,9 @@ async def _edit(ctx,text,kb=None):
     if cid and mid:
         try: await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=text,reply_markup=kb,parse_mode=H); return
         except: pass
+    if cid:
+        msg=await ctx.bot.send_message(chat_id=cid,text=text,reply_markup=kb,parse_mode=H)
+        ctx.user_data["mid"]=msg.message_id
 def _save(ctx,msg): ctx.user_data["cid"]=msg.chat_id; ctx.user_data["mid"]=msg.message_id
 
 # text style maps
