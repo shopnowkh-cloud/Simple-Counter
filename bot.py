@@ -24,7 +24,6 @@ HOME=[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
 def mm():
     return mkb(
         [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🗂️ បំប្លែង PDF",callback_data="menu_doc_tools")],
-        [IKB("ℹ️  អំពី Bot",callback_data="menu_about")],
     )
 def doc_tools_kb():
     return mkb(
@@ -96,25 +95,6 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"{'🖼️' if fmt=='PNG' else '📷'} <b>PDF → {fmt}</b>\n\n📎 សូម Upload ឯកសារ <b>PDF</b>:\n<i>Bot នឹងបំប្លែងរាល់ទំព័រ → {fmt}</i>",
             reply_markup=mkb([IKB("❌ បោះបង់",callback_data="menu_doc_tools")]),
             parse_mode=H); return S_PDF2IMG
-
-    if d=="menu_about":
-        import telegram as _tg; import sys
-        ptb_ver=_tg.__version__; py_ver=sys.version.split()[0]
-        await q.edit_message_text(
-            f"ℹ️ <b>Khmer Multi-Tool Bot</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"📅 <code>{datetime.now().strftime('%Y-%m-%d  %H:%M:%S')}</code>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"🐍 Python: <b>{py_ver}</b>\n"
-            f"📡 python-telegram-bot: <b>{ptb_ver}</b>\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"📦 <b>Libraries:</b>\n"
-            f"   fpdf2 • Pillow • PyMuPDF\n"
-            f"━━━━━━━━━━━━━━━━━━━━\n"
-            f"✍️ Text Style\n"
-            f"🗂️ PDF: រូបភាព→PDF | PDF→PNG | PDF→JPG\n"
-            f"📊 <b>សរុប: 4 មុខងារ</b>",
-            reply_markup=bb(),parse_mode=H); return END
 
     if d.startswith("copy_style_"):
         sk=d[11:]; orig=ctx.user_data.get("style_original","")
