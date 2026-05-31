@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os,io,re,logging,warnings,zoneinfo
+import os,io,re,logging,warnings
 from PIL import Image; from fpdf import FPDF
 import fitz  # pymupdf
 from datetime import datetime
@@ -24,7 +24,6 @@ HOME=[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
 def mm():
     return mkb(
         [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🗂️ បំប្លែង PDF",callback_data="menu_doc_tools")],
-        [IKB("⏰ World Clock",callback_data="menu_wclock")],
         [IKB("ℹ️  អំពី Bot",callback_data="menu_about")],
     )
 def doc_tools_kb():
@@ -98,10 +97,6 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             reply_markup=mkb([IKB("❌ បោះបង់",callback_data="menu_doc_tools")]),
             parse_mode=H); return S_PDF2IMG
 
-    # ── World Clock ──
-    if d=="menu_wclock":
-        return await _show_world_clock(q)
-
     if d=="menu_about":
         import telegram as _tg; import sys
         ptb_ver=_tg.__version__; py_ver=sys.version.split()[0]
@@ -114,12 +109,11 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"📡 python-telegram-bot: <b>{ptb_ver}</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"📦 <b>Libraries:</b>\n"
-            f"   fpdf2 • Pillow • PyMuPDF • zoneinfo\n"
+            f"   fpdf2 • Pillow • PyMuPDF\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"✍️ Text Style\n"
             f"🗂️ PDF: រូបភាព→PDF | PDF→PNG | PDF→JPG\n"
-            f"⏰ World Clock\n"
-            f"📊 <b>សរុប: 5 មុខងារ</b>",
+            f"📊 <b>សរុប: 4 មុខងារ</b>",
             reply_markup=bb(),parse_mode=H); return END
 
     if d.startswith("copy_style_"):
@@ -129,23 +123,6 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             await q.message.reply_text(f"<code>{styled}</code>",parse_mode=H)
         return S_STYLE
     if d=="pdf_done": return await _pdf_build(q,ctx)
-    return END
-
-# ── World Clock helper ────────────────────────────────────────────────────────
-async def _show_world_clock(q):
-    cities=[("🇰🇭 ភ្នំពេញ","Asia/Phnom_Penh"),("🇺🇸 New York","America/New_York"),
-            ("🇬🇧 London","Europe/London"),("🇫🇷 Paris","Europe/Paris"),
-            ("🇯🇵 Tokyo","Asia/Tokyo"),("🇦🇺 Sydney","Australia/Sydney"),
-            ("🇨🇳 Beijing","Asia/Shanghai"),("🇸🇬 Singapore","Asia/Singapore"),
-            ("🇦🇪 Dubai","Asia/Dubai"),("🇧🇷 São Paulo","America/Sao_Paulo")]
-    lines=[]
-    for name,tz in cities:
-        now=datetime.now(zoneinfo.ZoneInfo(tz))
-        lines.append(f"{name}\n<code>{now.strftime('%H:%M:%S')}  {now.strftime('%d/%m/%Y')}</code>")
-    await q.edit_message_text(
-        "⏰ <b>World Clock</b>\n━━━━━━━━━━━━\n"+"\n\n".join(lines),
-        reply_markup=InlineKeyboardMarkup([[IKB("🔄 Refresh",callback_data="menu_wclock")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]]),
-        parse_mode=H)
     return END
 
 # ── Text style ──────────────────────────────────────────────────────────────────
