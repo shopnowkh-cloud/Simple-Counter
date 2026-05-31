@@ -1,0 +1,26 @@
+# ══════════════════════════════════════════
+#  📦 Khmer Multi-Tool Bot — Requirements
+# ══════════════════════════════════════════
+
+# Telegram Bot Framework
+python-telegram-bot==20.7
+
+# QR Code Generator
+qrcode[pil]==7.4.2
+
+# QR Code Scanner (ត្រូវ install libzbar-dev ផង)
+# Ubuntu:  sudo apt install libzbar0 libzbar-dev
+# macOS:   brew install zbar
+pyzbar==0.1.9
+
+# Image Processing
+Pillow==10.2.0
+
+# PDF Creator
+fpdf2==2.7.9
+
+# Computer Vision (for QR scan fallback)
+opencv-python-headless==4.9.0.80
+
+# NumPy (dependency)
+numpy>=1.24.0
