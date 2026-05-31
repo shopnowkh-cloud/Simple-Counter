@@ -4,7 +4,7 @@ import os,io,re,logging,warnings
 from PIL import Image; from fpdf import FPDF
 import fitz  # pymupdf
 from datetime import datetime
-from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup,InputFile
+from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup,InputFile,CopyTextButton
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode; from telegram.warnings import PTBUserWarning
 warnings.filterwarnings("ignore",category=PTBUserWarning)
@@ -96,15 +96,6 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             reply_markup=mkb([IKB("❌ បោះបង់",callback_data="menu_doc_tools")]),
             parse_mode=H); return S_PDF2IMG
 
-    if d.startswith("copy_style_"):
-        sk=d[11:]; orig=ctx.user_data.get("style_original","")
-        if orig and sk in TS:
-            lbl,fn=TS[sk]; styled=fn(orig)
-            await q.answer("✅ ចុច code ខាងក្រោម ដើម្បី Copy!",show_alert=False)
-            await q.message.reply_text(
-                f"<b>{lbl}:</b>\n<code>{styled}</code>\n\n<i>👆 ចុចលើ code ដើម្បី Copy</i>",
-                parse_mode=H)
-        return S_STYLE
     if d=="pdf_done": return await _pdf_build(q,ctx)
     return END
 
@@ -116,9 +107,9 @@ async def text_style(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     def _preview(fn,text,maxlen=16):
         s=fn(text); return s[:maxlen]+("…" if len(s)>maxlen else "")
     ks=list(TS.keys())
-    btns=[[IKB(f"📋 {_preview(TS[ks[i]][1],t)}",callback_data=f"copy_style_{ks[i]}") for i in range(j,min(j+2,len(ks)))] for j in range(0,len(ks),2)]
+    btns=[[IKB(f"📋 {_preview(TS[ks[i]][1],t)}",copy_text=CopyTextButton(text=TS[ks[i]][1](t))) for i in range(j,min(j+2,len(ks)))] for j in range(0,len(ks),2)]
     btns+=[[IKB("✍️ ដំណើរការថ្មី",callback_data="menu_text_style")],HOME]
-    await _edit(ctx,f"✍️ <b>Style ទាំងអស់សម្រាប់:</b> <code>{t}</code>\n━━━━━━━━━━━━\n👇 ចុចប៊ូតុង ដើម្បី Copy Style:",InlineKeyboardMarkup(btns)); return S_STYLE
+    await _edit(ctx,f"✍️ <b>Style ទាំងអស់សម្រាប់:</b> <code>{t}</code>\n━━━━━━━━━━━━\n👇 ចុចប៊ូតុង Copy ម្តង!",InlineKeyboardMarkup(btns)); return S_STYLE
 
 # ── Image → PDF ──────────────────────────────────────────────────────────────────
 async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
