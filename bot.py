@@ -78,18 +78,18 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     await q.answer()
     ctx.user_data["cid"]=q.message.chat_id; ctx.user_data["mid"]=q.message.message_id
     if d=="back_main":
-        await q.edit_message_text("👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",reply_markup=mm(),parse_mode=H); return END
+        await _edit(ctx,"👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",mm()); return END
     if d=="menu_text_style":
-        await q.edit_message_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ សូមវាយ <b>អក្សរឡាតាំង</b>៖\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=bc(),parse_mode=H); return S_STYLE
+        await _edit(ctx,"✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ សូមវាយ <b>អក្សរឡាតាំង</b>៖\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",bc()); return S_STYLE
     if d=="menu_doc_tools":
-        await q.edit_message_text("🗂️ <b>បំប្លែង PDF</b>\n\nសូមជ្រើសរើសប្រភេទ៖",reply_markup=doc_tools_kb(),parse_mode=H); return END
+        await _edit(ctx,"🗂️ <b>បំប្លែង PDF</b>\n\nសូមជ្រើសរើសប្រភេទ៖",doc_tools_kb()); return END
     if d=="menu_photo_pdf":
         ctx.user_data["pdf_photos"]=[]
-        await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n\n📤 Upload រូបភាព (អាចច្រើន)\n✅ ចប់ → ចុច <b>បង្កើត PDF</b>",reply_markup=mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="menu_doc_tools")]),parse_mode=H); return S_PDF
+        await _edit(ctx,"🖼️ <b>រូបភាព → PDF</b>\n\n📤 Upload រូបភាព (អាចច្រើន)\n✅ ចប់ → ចុច <b>បង្កើត PDF</b>",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="menu_doc_tools")])); return S_PDF
     if d in("menu_pdf2png","menu_pdf2jpg"):
         fmt="PNG" if d=="menu_pdf2png" else "JPG"
         ctx.user_data["pdf2img_fmt"]=fmt
-        await q.edit_message_text(f"{'🖼️' if fmt=='PNG' else '📷'} <b>PDF → {fmt}</b>\n\n📎 សូម Upload ឯកសារ <b>PDF</b>:\n<i>Bot នឹងបំប្លែងរាល់ទំព័រ → {fmt}</i>",reply_markup=mkb([IKB("❌ បោះបង់",callback_data="menu_doc_tools")]),parse_mode=H); return S_PDF2IMG
+        await _edit(ctx,f"{'🖼️' if fmt=='PNG' else '📷'} <b>PDF → {fmt}</b>\n\n📎 សូម Upload ឯកសារ <b>PDF</b>:\n<i>Bot នឹងបំប្លែងរាល់ទំព័រ → {fmt}</i>",mkb([IKB("❌ បោះបង់",callback_data="menu_doc_tools")])); return S_PDF2IMG
     if d=="pdf_done": return await _pdf_build(q,ctx)
     return END
 
