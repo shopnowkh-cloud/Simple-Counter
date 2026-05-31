@@ -13,5 +13,4 @@ dependencies = [
     "python-telegram-bot>=22.7",
     "pyzbar>=0.1.9",
     "qrcode>=8.2",
-    "telegram>=0.0.1",
 ]
