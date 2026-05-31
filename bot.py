@@ -41,27 +41,27 @@ def _fun_nav(excl=None):
 def mm():
     return mkb(
         # ── 🔵 QR Tools ──
-        [IKB("╔═ 🔵 QR TOOLS ══════════╗",callback_data="noop",style=PRIMARY)],
+        [IKB("🔵  QR TOOLS",callback_data="noop",style=PRIMARY)],
         [IKB("📷 បង្កើត QR Code",callback_data="menu_qr_create",style=PRIMARY), IKB("🔍 Scan QR Code",callback_data="menu_qr_scan",style=PRIMARY)],
         # ── 🟣 Text & Document ──
-        [IKB("╠═ 🟣 TEXT & DOCUMENT ════╣",callback_data="noop")],
+        [IKB("🟣  TEXT & DOCUMENT",callback_data="noop")],
         [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
         [IKB("📝 រាប់អក្សរ",callback_data="menu_count"),             IKB("📡 កូដ Morse",callback_data="menu_morse")],
         # ── 🟢 Math & Convert ──
-        [IKB("╠═ 🟢 MATH & CONVERT ═════╣",callback_data="noop",style=SUCCESS)],
+        [IKB("🟢  MATH & CONVERT",callback_data="noop",style=SUCCESS)],
         [IKB("🔢 ម៉ាស៊ីនគណនា",callback_data="menu_calculator",style=SUCCESS),  IKB("🌡️ សីតុណ្ហភាព",callback_data="menu_temp",style=SUCCESS)],
         [IKB("🔢 ប្ដូរគោលលេខ",callback_data="menu_nbase",style=SUCCESS),       IKB("📏 ប្ដូរឯកតា",callback_data="menu_unit",style=SUCCESS)],
         [IKB("📐 BMI Calculator",callback_data="menu_bmi",style=SUCCESS),        IKB("💰 គណនាការប្រាក់",callback_data="menu_loan",style=SUCCESS)],
         # ── 🔴 Security ──
-        [IKB("╠═ 🔴 SECURITY ════════════╣",callback_data="noop",style=DANGER)],
+        [IKB("🔴  SECURITY",callback_data="noop",style=DANGER)],
         [IKB("🔐 ពិនិត្យ Password",callback_data="menu_password",style=DANGER),  IKB("🔑 បង្កើត Password",callback_data="menu_genpass",style=DANGER)],
         [IKB("🔒 Base64",callback_data="menu_base64",style=DANGER),               IKB("#️⃣ Hash Generator",callback_data="menu_hash",style=DANGER)],
         # ── 🟡 Fun & Utility ──
-        [IKB("╠═ 🟡 FUN & UTILITY ══════╣",callback_data="noop",style=SUCCESS)],
+        [IKB("🟡  FUN & UTILITY",callback_data="noop",style=SUCCESS)],
         [IKB("🎲 Random Picker",callback_data="menu_picker",style=SUCCESS),       IKB("🎰 Coin & Dice",callback_data="menu_dice",style=SUCCESS)],
         [IKB("⏰ World Clock",callback_data="menu_wclock",style=SUCCESS),          IKB("📅 គណនាអាយុ",callback_data="menu_date",style=SUCCESS)],
         # ── Info ──
-        [IKB("╚═ ℹ️ អំពី Bot ══════════════╝",callback_data="menu_about",style=PRIMARY)],
+        [IKB("ℹ️  អំពី Bot",callback_data="menu_about",style=PRIMARY)],
     )
 
 # ── edit/save helpers ───────────────────────────────────────────────────────────
