@@ -108,7 +108,11 @@ async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if not p and not dc: await _edit(ctx,"⚠️ សូម Upload រូបភាព!",mkb([IKB("❌ បោះបង់",callback_data="menu_doc_tools")])); return S_PDF
     f=await ctx.bot.get_file(p.file_id if p else dc.file_id); ctx.user_data.setdefault("pdf_photos",[]).append(bytes(await f.download_as_bytearray()))
     n=len(ctx.user_data["pdf_photos"])
-    await _edit(ctx,f"🖼️ <b>បានទទួល {n} រូប</b>\n📤 Upload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>",mkb([IKB(f"✅ បង្កើត PDF ({n} រូប)",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="menu_doc_tools")])); return S_PDF
+    msg=await u.message.reply_text(
+        f"🖼️ <b>បានទទួល {n} រូប</b>\n📤 Upload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>",
+        reply_markup=mkb([IKB(f"✅ បង្កើត PDF ({n} រូប)",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="menu_doc_tools")]),
+        parse_mode=H)
+    _save(ctx,msg); return S_PDF
 
 async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
     photos=ctx.user_data.get("pdf_photos",[])
