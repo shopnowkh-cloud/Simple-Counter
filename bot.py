@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os,io,re,math,base64,random,string,logging,warnings,hashlib,qrcode,cv2,numpy as np
-from PIL import Image; from pyzbar.pyzbar import decode as pyzbar_decode; from fpdf import FPDF
+import os,io,re,math,base64,random,string,logging,warnings,hashlib
+from PIL import Image; from fpdf import FPDF
 from datetime import datetime,date,timezone; from dateutil.relativedelta import relativedelta
 import zoneinfo
 from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup,InputFile
@@ -14,8 +14,8 @@ if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណ�
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
 
-(S_QR,S_SCAN,S_STYLE,S_PDF,S_CALC,S_PASS,S_PICK,S_MORSE,S_B64,
- S_COUNT,S_NBASE,S_TEMP,S_HASH,S_DATE,S_UNIT,S_BMI,S_LOAN,S_LUCK)=range(18)
+(S_STYLE,S_PDF,S_CALC,S_PASS,S_PICK,S_MORSE,S_B64,
+ S_COUNT,S_NBASE,S_TEMP,S_HASH,S_DATE,S_UNIT,S_BMI,S_LOAN,S_LUCK)=range(16)
 H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── keyboards ───────────────────────────────────────────────────────────────────
@@ -23,9 +23,6 @@ def mkb(*r): return InlineKeyboardMarkup(list(r))
 def bb(): return mkb([IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])
 def bc(): return mkb([IKB("❌ បោះបង់",callback_data="back_main",style=DANGER)])
 HOME=[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
-def _qr_nav(excl=None):
-    b=[IKB("📷 QR Create",callback_data="menu_qr_create",style=PRIMARY),IKB("🔍 QR Scan",callback_data="menu_qr_scan",style=PRIMARY)]
-    r=[x for x in b if x.callback_data!=excl]; return [r] if r else []
 def _text_nav(excl=None):
     b=[IKB("✍️ Style",callback_data="menu_text_style"),IKB("🖼️ PDF",callback_data="menu_photo_pdf"),IKB("📝 Count",callback_data="menu_count"),IKB("📡 Morse",callback_data="menu_morse")]
     r=[x for x in b if x.callback_data!=excl]; return [r[i:i+2] for i in range(0,len(r),2)]
@@ -40,9 +37,6 @@ def _fun_nav(excl=None):
     r=[x for x in b if x.callback_data!=excl]; return [r[i:i+2] for i in range(0,len(r),2)]
 def mm():
     return mkb(
-        # ── 🔵 QR Tools ──
-        [IKB("🔵  QR TOOLS",callback_data="noop",style=PRIMARY)],
-        [IKB("📷 បង្កើត QR Code",callback_data="menu_qr_create",style=PRIMARY), IKB("🔍 Scan QR Code",callback_data="menu_qr_scan",style=PRIMARY)],
         # ── 🟣 Text & Document ──
         [IKB("🟣  TEXT & DOCUMENT",callback_data="noop")],
         [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
@@ -99,9 +93,8 @@ async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         "┌─────────────────────────┐\n"
         "│  🤖 <b>Khmer Multi-Tool Bot</b> 🇰🇭  │\n"
         "└─────────────────────────┘\n"
-        "🔵 QR Code  🟣 Text & Doc\n"
-        "🟢 Math & Convert  🔴 Security\n"
-        "🟡 Fun & Utility\n"
+        "🟣 Text & Doc  🟢 Math & Convert\n"
+        "🔴 Security  🟡 Fun & Utility\n"
         "──────────────────────────\n"
         "👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",
         reply_markup=mm(),parse_mode=H)
@@ -119,16 +112,11 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "┌─────────────────────────┐\n"
             "│  🤖 <b>Khmer Multi-Tool Bot</b> 🇰🇭  │\n"
             "└─────────────────────────┘\n"
-            "🔵 QR Code  🟣 Text & Doc\n"
-            "🟢 Math & Convert  🔴 Security\n"
-            "🟡 Fun & Utility\n"
+            "🟣 Text & Doc  🟢 Math & Convert\n"
+            "🔴 Security  🟡 Fun & Utility\n"
             "──────────────────────────\n"
             "👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",
             reply_markup=mm(),parse_mode=H); return END
-    if d=="menu_qr_create":
-        await q.edit_message_text("📷 <b>បង្កើត QR Code</b>\n\n✏️ សូមវាយ Text/Link ចង់បំប្លែង៖",reply_markup=bc(),parse_mode=H); return S_QR
-    if d=="menu_qr_scan":
-        await q.edit_message_text("🔍 <b>Scan QR Code</b>\n\n📤 សូម Upload រូបភាព QR Code៖",reply_markup=bc(),parse_mode=H); return S_SCAN
     if d=="menu_text_style":
         await q.edit_message_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ សូមវាយ <b>អក្សរឡាតាំង</b>៖\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=bc(),parse_mode=H); return S_STYLE
     if d=="menu_photo_pdf":
@@ -353,29 +341,6 @@ async def _show_dice_menu(q):
             [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
         ),parse_mode=H)
     return END
-
-# ── QR create ───────────────────────────────────────────────────────────────────
-async def qr_input(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text.strip()
-    if not t: await _edit(ctx,"⚠️ សូមវាយអ្វីមួយ!",bc()); return S_QR
-    await _edit(ctx,"⏳ <b>កំពុងបង្កើត QR Code...</b>"); await u.message.delete()
-    qr=qrcode.QRCode(version=None,error_correction=qrcode.constants.ERROR_CORRECT_H,box_size=12,border=4)
-    qr.add_data(t); qr.make(fit=True); img=qr.make_image(fill_color="#0A0A0A",back_color="#FFFFFF").convert("RGB")
-    buf=io.BytesIO(); img.save(buf,format="PNG"); buf.seek(0)
-    msg=await u.message.reply_photo(photo=buf,caption=f"✅ <b>QR Code បង្កើតជោគជ័យ!</b>\n📝 <code>{t[:200]}</code>\n📐 {img.size[0]}×{img.size[1]}px",reply_markup=InlineKeyboardMarkup([[IKB("🔄 QR Code ថ្មី",callback_data="menu_qr_create",style=PRIMARY)],*_qr_nav("menu_qr_create"),HOME]),parse_mode=H)
-    _save(ctx,msg); return END
-
-# ── QR scan ─────────────────────────────────────────────────────────────────────
-async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    p=u.message.photo[-1] if u.message.photo else None; dc=u.message.document if u.message.document else None
-    if not p and not dc: await _edit(ctx,"⚠️ <b>សូម Upload រូបភាព QR Code!</b>",bc()); return S_SCAN
-    await _edit(ctx,"⏳ <b>កំពុង Scan QR Code...</b>")
-    f=await ctx.bot.get_file(p.file_id if p else dc.file_id); raw=await f.download_as_bytearray()
-    cv_img=cv2.imdecode(np.frombuffer(raw,np.uint8),cv2.IMREAD_COLOR)
-    dec=pyzbar_decode(Image.fromarray(cv2.cvtColor(cv_img,cv2.COLOR_BGR2RGB)))
-    if not dec: await _edit(ctx,"❌ <b>រក QR Code មិនឃើញ!</b>\n\n💡 ប្រើរូបភាពច្បាស់ • QR ត្រូវឃើញពេញ",InlineKeyboardMarkup([[IKB("🔄 ព្យាយាមម្ដងទៀត",callback_data="menu_qr_scan",style=PRIMARY)],*_qr_nav("menu_qr_scan"),HOME])); return END
-    res=[f"<b>#{i}</b> [{d.type}]\n<code>{d.data.decode('utf-8','replace')[:300]}</code>" for i,d in enumerate(dec,1)]
-    await _edit(ctx,f"✅ <b>Scan ជោគជ័យ! រក QR បាន {len(dec)} ចំនួន</b>\n\n"+"\n\n".join(res),InlineKeyboardMarkup([[IKB("🔄 Scan ថ្មី",callback_data="menu_qr_scan",style=PRIMARY)],*_qr_nav("menu_qr_scan"),HOME])); return END
 
 # ── Text style ──────────────────────────────────────────────────────────────────
 async def text_style(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -702,8 +667,6 @@ def main():
     app.add_handler(ConversationHandler(
         entry_points=[CommandHandler("start",cmd_start),CB_H],
         states={
-            S_QR:    [MessageHandler(TXT,qr_input),   CB_H],
-            S_SCAN:  [MessageHandler(IMG,qr_scan),    CB_H],
             S_STYLE: [MessageHandler(TXT,text_style), CB_H],
             S_PDF:   [MessageHandler(IMG,pdf_photo),  CB_H],
             S_CALC:  [CB_H],
