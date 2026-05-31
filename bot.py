@@ -80,12 +80,6 @@ async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data.clear()
     msg=await u.message.reply_text(
         f"👋 សួស្ដី <b>{u.effective_user.first_name}</b>!\n"
-        "┌─────────────────────────┐\n"
-        "│  🤖 <b>Khmer Multi-Tool Bot</b> 🇰🇭  │\n"
-        "└─────────────────────────┘\n"
-        "🟣 Text & Doc  🟢 Math & Convert\n"
-        "🔴 Security  🟡 Fun & Utility\n"
-        "──────────────────────────\n"
         "👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",
         reply_markup=mm(),parse_mode=H)
     _save(ctx,msg); return END
@@ -99,12 +93,6 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 
     if d=="back_main":
         await q.edit_message_text(
-            "┌─────────────────────────┐\n"
-            "│  🤖 <b>Khmer Multi-Tool Bot</b> 🇰🇭  │\n"
-            "└─────────────────────────┘\n"
-            "🟣 Text & Doc  🟢 Math & Convert\n"
-            "🔴 Security  🟡 Fun & Utility\n"
-            "──────────────────────────\n"
             "👇 <b>ជ្រើសរើសប្រភេទ ហើយចុចប៊ូតុង</b>",
             reply_markup=mm(),parse_mode=H); return END
     if d=="menu_text_style":
