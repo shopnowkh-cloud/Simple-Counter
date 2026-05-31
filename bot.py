@@ -184,7 +184,7 @@ def main():
     IMG=filters.PHOTO|filters.Document.IMAGE
     PDF_F=filters.Document.MimeType("application/pdf")
     app.add_handler(ConversationHandler(
-        entry_points=[CommandHandler("start",cmd_start)],
+        entry_points=[CommandHandler("start",cmd_start),MessageHandler(TXT,main_handler),MessageHandler(filters.ALL,cmd_start)],
         states={
             S_MAIN:    [MessageHandler(TXT,main_handler)],
             S_DOC:     [MessageHandler(TXT,doc_handler)],
