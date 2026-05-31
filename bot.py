@@ -6,7 +6,8 @@ from datetime import datetime,date,timezone; from dateutil.relativedelta import 
 import zoneinfo
 from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup,InputFile
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
-from telegram.constants import ParseMode; from telegram.warnings import PTBUserWarning
+from telegram.constants import ParseMode,KeyboardButtonStyle as KBS; from telegram.warnings import PTBUserWarning
+PRIMARY=KBS.PRIMARY; SUCCESS=KBS.SUCCESS; DANGER=KBS.DANGER
 warnings.filterwarnings("ignore",category=PTBUserWarning)
 BOT_TOKEN=os.environ.get("BOT_TOKEN","")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណត់!")
@@ -19,32 +20,32 @@ H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── keyboards ───────────────────────────────────────────────────────────────────
 def mkb(*r): return InlineKeyboardMarkup(list(r))
-def bb(): return mkb([IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])
-def bc(): return mkb([IKB("❌ បោះបង់",callback_data="back_main")])
+def bb(): return mkb([IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])
+def bc(): return mkb([IKB("❌ បោះបង់",callback_data="back_main",style=DANGER)])
 def mm():
     return mkb(
         # ── 🔵 QR Tools ──
-        [IKB("╔═ 🔵 QR TOOLS ══════════╗",callback_data="noop")],
-        [IKB("📷 បង្កើត QR Code",callback_data="menu_qr_create"),   IKB("🔍 Scan QR Code",callback_data="menu_qr_scan")],
+        [IKB("╔═ 🔵 QR TOOLS ══════════╗",callback_data="noop",style=PRIMARY)],
+        [IKB("📷 បង្កើត QR Code",callback_data="menu_qr_create",style=PRIMARY), IKB("🔍 Scan QR Code",callback_data="menu_qr_scan",style=PRIMARY)],
         # ── 🟣 Text & Document ──
         [IKB("╠═ 🟣 TEXT & DOCUMENT ════╣",callback_data="noop")],
         [IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="menu_text_style"),  IKB("🖼️ រូបភាព → PDF",callback_data="menu_photo_pdf")],
         [IKB("📝 រាប់អក្សរ",callback_data="menu_count"),             IKB("📡 កូដ Morse",callback_data="menu_morse")],
         # ── 🟢 Math & Convert ──
-        [IKB("╠═ 🟢 MATH & CONVERT ═════╣",callback_data="noop")],
-        [IKB("🔢 ម៉ាស៊ីនគណនា",callback_data="menu_calculator"),     IKB("🌡️ សីតុណ្ហភាព",callback_data="menu_temp")],
-        [IKB("🔢 ប្ដូរគោលលេខ",callback_data="menu_nbase"),          IKB("📏 ប្ដូរឯកតា",callback_data="menu_unit")],
-        [IKB("📐 BMI Calculator",callback_data="menu_bmi"),           IKB("💰 គណនាការប្រាក់",callback_data="menu_loan")],
+        [IKB("╠═ 🟢 MATH & CONVERT ═════╣",callback_data="noop",style=SUCCESS)],
+        [IKB("🔢 ម៉ាស៊ីនគណនា",callback_data="menu_calculator",style=SUCCESS),  IKB("🌡️ សីតុណ្ហភាព",callback_data="menu_temp",style=SUCCESS)],
+        [IKB("🔢 ប្ដូរគោលលេខ",callback_data="menu_nbase",style=SUCCESS),       IKB("📏 ប្ដូរឯកតា",callback_data="menu_unit",style=SUCCESS)],
+        [IKB("📐 BMI Calculator",callback_data="menu_bmi",style=SUCCESS),        IKB("💰 គណនាការប្រាក់",callback_data="menu_loan",style=SUCCESS)],
         # ── 🔴 Security ──
-        [IKB("╠═ 🔴 SECURITY ════════════╣",callback_data="noop")],
-        [IKB("🔐 ពិនិត្យ Password",callback_data="menu_password"),   IKB("🔑 បង្កើត Password",callback_data="menu_genpass")],
-        [IKB("🔒 Base64",callback_data="menu_base64"),                IKB("#️⃣ Hash Generator",callback_data="menu_hash")],
+        [IKB("╠═ 🔴 SECURITY ════════════╣",callback_data="noop",style=DANGER)],
+        [IKB("🔐 ពិនិត្យ Password",callback_data="menu_password",style=DANGER),  IKB("🔑 បង្កើត Password",callback_data="menu_genpass",style=DANGER)],
+        [IKB("🔒 Base64",callback_data="menu_base64",style=DANGER),               IKB("#️⃣ Hash Generator",callback_data="menu_hash",style=DANGER)],
         # ── 🟡 Fun & Utility ──
-        [IKB("╠═ 🟡 FUN & UTILITY ══════╣",callback_data="noop")],
-        [IKB("🎲 Random Picker",callback_data="menu_picker"),         IKB("🎰 Coin & Dice",callback_data="menu_dice")],
-        [IKB("⏰ World Clock",callback_data="menu_wclock"),           IKB("📅 គណនាអាយុ",callback_data="menu_date")],
+        [IKB("╠═ 🟡 FUN & UTILITY ══════╣",callback_data="noop",style=SUCCESS)],
+        [IKB("🎲 Random Picker",callback_data="menu_picker",style=SUCCESS),       IKB("🎰 Coin & Dice",callback_data="menu_dice",style=SUCCESS)],
+        [IKB("⏰ World Clock",callback_data="menu_wclock",style=SUCCESS),          IKB("📅 គណនាអាយុ",callback_data="menu_date",style=SUCCESS)],
         # ── Info ──
-        [IKB("╚═ ℹ️ អំពី Bot ══════════════╝",callback_data="menu_about")],
+        [IKB("╚═ ℹ️ អំពី Bot ══════════════╝",callback_data="menu_about",style=PRIMARY)],
     )
 
 # ── edit/save helpers ───────────────────────────────────────────────────────────
@@ -155,9 +156,9 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(
             "🔑 <b>បង្កើត Password</b>\n\nជ្រើសប្រភេទ Password៖",
             reply_markup=mkb(
-                [IKB("🔡 អក្សរ + លេខ",callback_data="gp_type_alnum"),IKB("🔐 អក្សរ + លេខ + សញ្ញា",callback_data="gp_type_full")],
-                [IKB("🔢 លេខ PIN",callback_data="gp_type_pin"),IKB("🔤 អក្សរ (ងាយចង់ចាំ)",callback_data="gp_type_words")],
-                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
+                [IKB("🔡 អក្សរ + លេខ",callback_data="gp_type_alnum",style=DANGER),IKB("🔐 អក្សរ + លេខ + សញ្ញា",callback_data="gp_type_full",style=DANGER)],
+                [IKB("🔢 លេខ PIN",callback_data="gp_type_pin",style=DANGER),IKB("🔤 អក្សរ (ងាយចង់ចាំ)",callback_data="gp_type_words",style=DANGER)],
+                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
             ),parse_mode=H); return END
     if d.startswith("gp_type_"):
         ctx.user_data["gp_type"]=d[8:]
@@ -166,9 +167,9 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(
             f"🔑 <b>ជ្រើសប្រវែង ({lbl.get(t,t)})</b>",
             reply_markup=mkb(
-                [IKB("8",callback_data=f"gp_len_8"),IKB("12",callback_data=f"gp_len_12"),IKB("16",callback_data=f"gp_len_16")],
-                [IKB("20",callback_data=f"gp_len_20"),IKB("24",callback_data=f"gp_len_24"),IKB("32",callback_data=f"gp_len_32")],
-                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
+                [IKB("8",callback_data=f"gp_len_8",style=DANGER),IKB("12",callback_data=f"gp_len_12",style=DANGER),IKB("16",callback_data=f"gp_len_16",style=DANGER)],
+                [IKB("20",callback_data=f"gp_len_20",style=DANGER),IKB("24",callback_data=f"gp_len_24",style=DANGER),IKB("32",callback_data=f"gp_len_32",style=DANGER)],
+                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
             ),parse_mode=H); return END
     if d.startswith("gp_len_"):
         length=int(d[7:]); ptype=ctx.user_data.get("gp_type","alnum")
@@ -178,9 +179,9 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"<code>{pw}</code>\n━━━━━━━━━━━━\n"
             f"📏 ប្រវែង: <b>{len(pw)}</b> តួ",
             reply_markup=mkb(
-                [IKB("🔄 បង្កើតថ្មីទៀត",callback_data=f"gp_len_{length}")],
-                [IKB("🔑 ប្រភេទផ្សេង",callback_data="menu_genpass")],
-                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
+                [IKB("🔄 បង្កើតថ្មីទៀត",callback_data=f"gp_len_{length}",style=DANGER)],
+                [IKB("🔑 ប្រភេទផ្សេង",callback_data="menu_genpass",style=DANGER)],
+                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
             ),parse_mode=H); return END
 
     # ── Unit Converter ──
@@ -188,9 +189,9 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(
             "📏 <b>ប្ដូរឯកតា</b>\n\nជ្រើសប្រភេទ៖",
             reply_markup=mkb(
-                [IKB("📏 ចម្ងាយ",callback_data="unit_length"),IKB("⚖️ ទម្ងន់",callback_data="unit_weight")],
-                [IKB("📐 ផ្ទៃក្រឡា",callback_data="unit_area"),IKB("🧪 បរិមាណ",callback_data="unit_volume")],
-                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
+                [IKB("📏 ចម្ងាយ",callback_data="unit_length",style=SUCCESS),IKB("⚖️ ទម្ងន់",callback_data="unit_weight",style=SUCCESS)],
+                [IKB("📐 ផ្ទៃក្រឡា",callback_data="unit_area",style=SUCCESS),IKB("🧪 បរិមាណ",callback_data="unit_volume",style=SUCCESS)],
+                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
             ),parse_mode=H); return S_UNIT
     if d in("unit_length","unit_weight","unit_area","unit_volume"):
         ctx.user_data["unit_type"]=d.split("_")[1]
@@ -222,8 +223,8 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "<code>ឧ: 10000 5 12</code>\n"
             "<i>ប្រាក់ $10,000 ▪ 5%/ឆ្នាំ ▪ 12 ខែ</i>",
             reply_markup=mkb(
-                [IKB("📊 ការប្រាក់ធម្មតា",callback_data="loan_simple"),IKB("📈 ការប្រាក់ផ្សំ",callback_data="loan_compound")],
-                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
+                [IKB("📊 ការប្រាក់ធម្មតា",callback_data="loan_simple",style=SUCCESS),IKB("📈 ការប្រាក់ផ្សំ",callback_data="loan_compound",style=SUCCESS)],
+                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
             ),parse_mode=H); return S_LOAN
     if d in("loan_simple","loan_compound"):
         ctx.user_data["loan_type"]=d.split("_")[1]
@@ -240,7 +241,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         r=random.choice(["👑 HEADS (ព្រះ)","🦅 TAILS (ខ)"])
         await q.edit_message_text(
             f"🎴 <b>សសេ</b>\n━━━━━━━━━━━━\n{r}",
-            reply_markup=mkb([IKB("🔄 សសេម្ដងទៀត",callback_data="dice_coin"),IKB("🎲 គ្រាប់ចៃ",callback_data="dice_roll6")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return END
+            reply_markup=mkb([IKB("🔄 សសេម្ដងទៀត",callback_data="dice_coin",style=SUCCESS),IKB("🎲 គ្រាប់ចៃ",callback_data="dice_roll6",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),parse_mode=H); return END
     if d.startswith("dice_roll"):
         sides=int(d[9:]); r=random.randint(1,sides)
         pips={1:"⚀",2:"⚁",3:"⚂",4:"⚃",5:"⚄",6:"⚅"}
@@ -248,16 +249,16 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(
             f"🎲 <b>គ្រាប់ចៃ D{sides}</b>\n━━━━━━━━━━━━\n{em} <b>{r}</b>",
             reply_markup=mkb(
-                [IKB("🎲 D6",callback_data="dice_roll6"),IKB("🎲 D12",callback_data="dice_roll12"),IKB("🎲 D20",callback_data="dice_roll20")],
-                [IKB("🔄 ម្ដងទៀត",callback_data=f"dice_roll{sides}"),IKB("🎴 សសេ",callback_data="dice_coin")],
-                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
+                [IKB("🎲 D6",callback_data="dice_roll6",style=SUCCESS),IKB("🎲 D12",callback_data="dice_roll12",style=SUCCESS),IKB("🎲 D20",callback_data="dice_roll20",style=SUCCESS)],
+                [IKB("🔄 ម្ដងទៀត",callback_data=f"dice_roll{sides}",style=SUCCESS),IKB("🎴 សសេ",callback_data="dice_coin",style=SUCCESS)],
+                [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
             ),parse_mode=H); return END
     if d=="dice_lucky":
         nums=random.sample(range(1,50),6); nums.sort()
         await q.edit_message_text(
             f"🍀 <b>លេខនាសី</b>\n━━━━━━━━━━━━\n"+"  ".join(f"<b>{n}</b>" for n in nums)+
             f"\n━━━━━━━━━━━━\n⭐ លេខពិសេស: <b>{random.randint(1,12)}</b>",
-            reply_markup=mkb([IKB("🔄 ថ្មីម្ដងទៀត",callback_data="dice_lucky")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H); return END
+            reply_markup=mkb([IKB("🔄 ថ្មីម្ដងទៀត",callback_data="dice_lucky",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),parse_mode=H); return END
 
     if d=="menu_about":
         import telegram as _tg
@@ -273,7 +274,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"🐍 Python: <b>{py_ver}</b>\n"
             f"📡 python-telegram-bot: <b>{ptb_ver}</b>\n"
-            f"🤖 Telegram Bot API: <b>9.0 ✅</b>\n"
+            f"🤖 Telegram Bot API: <b>9.4 ✅</b>\n"
             f"━━━━━━━━━━━━━━━━━━━━\n"
             f"📦 <b>Libraries:</b>\n"
             f"   qrcode • pyzbar • fpdf2\n"
@@ -327,7 +328,7 @@ async def _show_world_clock(q):
         lines.append(f"{name}\n<code>{now.strftime('%H:%M:%S')}  {now.strftime('%d/%m/%Y')}</code>")
     await q.edit_message_text(
         "⏰ <b>World Clock</b>\n━━━━━━━━━━━━\n"+"\n\n".join(lines),
-        reply_markup=mkb([IKB("🔄 Refresh",callback_data="menu_wclock")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),
+        reply_markup=mkb([IKB("🔄 Refresh",callback_data="menu_wclock",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),
         parse_mode=H)
     return END
 
@@ -336,10 +337,10 @@ async def _show_dice_menu(q):
     await q.edit_message_text(
         "🎲 <b>Coin & Dice</b>\n\nជ្រើសការលេង៖",
         reply_markup=mkb(
-            [IKB("🎴 សសេ (Coin Flip)",callback_data="dice_coin")],
-            [IKB("⚀ D6",callback_data="dice_roll6"),IKB("🎲 D12",callback_data="dice_roll12"),IKB("🎲 D20",callback_data="dice_roll20")],
-            [IKB("🍀 លេខនាសី",callback_data="dice_lucky")],
-            [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]
+            [IKB("🎴 សសេ (Coin Flip)",callback_data="dice_coin",style=SUCCESS)],
+            [IKB("⚀ D6",callback_data="dice_roll6",style=SUCCESS),IKB("🎲 D12",callback_data="dice_roll12",style=SUCCESS),IKB("🎲 D20",callback_data="dice_roll20",style=SUCCESS)],
+            [IKB("🍀 លេខនាសី",callback_data="dice_lucky",style=SUCCESS)],
+            [IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]
         ),parse_mode=H)
     return END
 
@@ -351,7 +352,7 @@ async def qr_input(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     qr=qrcode.QRCode(version=None,error_correction=qrcode.constants.ERROR_CORRECT_H,box_size=12,border=4)
     qr.add_data(t); qr.make(fit=True); img=qr.make_image(fill_color="#0A0A0A",back_color="#FFFFFF").convert("RGB")
     buf=io.BytesIO(); img.save(buf,format="PNG"); buf.seek(0)
-    msg=await u.message.reply_photo(photo=buf,caption=f"✅ <b>QR Code បង្កើតជោគជ័យ!</b>\n📝 <code>{t[:200]}</code>\n📐 {img.size[0]}×{img.size[1]}px",reply_markup=mkb([IKB("🔄 QR Code ថ្មី",callback_data="menu_qr_create")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H)
+    msg=await u.message.reply_photo(photo=buf,caption=f"✅ <b>QR Code បង្កើតជោគជ័យ!</b>\n📝 <code>{t[:200]}</code>\n📐 {img.size[0]}×{img.size[1]}px",reply_markup=mkb([IKB("🔄 QR Code ថ្មី",callback_data="menu_qr_create",style=PRIMARY)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),parse_mode=H)
     _save(ctx,msg); return END
 
 # ── QR scan ─────────────────────────────────────────────────────────────────────
@@ -362,9 +363,9 @@ async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     f=await ctx.bot.get_file(p.file_id if p else dc.file_id); raw=await f.download_as_bytearray()
     cv_img=cv2.imdecode(np.frombuffer(raw,np.uint8),cv2.IMREAD_COLOR)
     dec=pyzbar_decode(Image.fromarray(cv2.cvtColor(cv_img,cv2.COLOR_BGR2RGB)))
-    if not dec: await _edit(ctx,"❌ <b>រក QR Code មិនឃើញ!</b>\n\n💡 ប្រើរូបភាពច្បាស់ • QR ត្រូវឃើញពេញ",mkb([IKB("🔄 ព្យាយាមម្ដងទៀត",callback_data="menu_qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])); return END
+    if not dec: await _edit(ctx,"❌ <b>រក QR Code មិនឃើញ!</b>\n\n💡 ប្រើរូបភាពច្បាស់ • QR ត្រូវឃើញពេញ",mkb([IKB("🔄 ព្យាយាមម្ដងទៀត",callback_data="menu_qr_scan",style=PRIMARY)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])); return END
     res=[f"<b>#{i}</b> [{d.type}]\n<code>{d.data.decode('utf-8','replace')[:300]}</code>" for i,d in enumerate(dec,1)]
-    await _edit(ctx,f"✅ <b>Scan ជោគជ័យ! រក QR បាន {len(dec)} ចំនួន</b>\n\n"+"\n\n".join(res),mkb([IKB("🔄 Scan ថ្មី",callback_data="menu_qr_scan"),IKB("📷 បង្កើត QR",callback_data="menu_qr_create")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])); return END
+    await _edit(ctx,f"✅ <b>Scan ជោគជ័យ! រក QR បាន {len(dec)} ចំនួន</b>\n\n"+"\n\n".join(res),mkb([IKB("🔄 Scan ថ្មី",callback_data="menu_qr_scan",style=PRIMARY),IKB("📷 បង្កើត QR",callback_data="menu_qr_create",style=PRIMARY)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])); return END
 
 # ── Text style ──────────────────────────────────────────────────────────────────
 async def text_style(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -373,16 +374,16 @@ async def text_style(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     await u.message.delete(); ctx.user_data["style_original"]=t
     rows=[f"<b>{lbl}:</b>\n{fn(t)}" for _,(lbl,fn) in TS.items()]
     ks=list(TS.keys()); btns=[[IKB(f"📋 {TS[ks[i]][0]}",callback_data=f"copy_style_{ks[i]}") for i in range(j,min(j+2,len(ks)))] for j in range(0,len(ks),2)]
-    btns+=[[IKB("✍️ ដំណើរការថ្មី",callback_data="menu_text_style")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]]
+    btns+=[[IKB("✍️ ដំណើរការថ្មី",callback_data="menu_text_style",style=PRIMARY)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]]
     await _edit(ctx,f"✍️ <b>Style ទាំងអស់សម្រាប់:</b> <code>{t}</code>\n━━━━━━━━━━━━\n\n"+"\n\n".join(rows)+"\n\n━━━━━━━━━━━━\n👇 ចុចប៊ូតុង ចម្លង Style:",InlineKeyboardMarkup(btns)); return S_STYLE
 
 # ── PDF ─────────────────────────────────────────────────────────────────────────
 async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     p=u.message.photo[-1] if u.message.photo else None; dc=u.message.document if u.message.document else None
-    if not p and not dc: await _edit(ctx,"⚠️ សូម Upload រូបភាព!",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="back_main")])); return S_PDF
+    if not p and not dc: await _edit(ctx,"⚠️ សូម Upload រូបភាព!",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done",style=SUCCESS),IKB("❌ បោះបង់",callback_data="back_main",style=DANGER)])); return S_PDF
     f=await ctx.bot.get_file(p.file_id if p else dc.file_id); ctx.user_data.setdefault("pdf_photos",[]).append(bytes(await f.download_as_bytearray()))
     n=len(ctx.user_data["pdf_photos"])
-    await _edit(ctx,f"✅ <b>រូបភាពទី {n} បានទទួល!</b>\n📤 Upload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done"),IKB("❌ បោះបង់",callback_data="back_main")])); return S_PDF
+    await _edit(ctx,f"✅ <b>រូបភាពទី {n} បានទទួល!</b>\n📤 Upload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>",mkb([IKB("✅ បង្កើត PDF",callback_data="pdf_done",style=SUCCESS),IKB("❌ បោះបង់",callback_data="back_main",style=DANGER)])); return S_PDF
 
 async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
     photos=ctx.user_data.get("pdf_photos",[])
@@ -395,14 +396,14 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
         else:   pdf.add_page("P",(210,297)); pw,ph=210,297
         ra=min(pw/w,ph/h); nw,nh=w*ra,h*ra; tmp=io.BytesIO(); img.save(tmp,format="JPEG",quality=90); tmp.seek(0); pdf.image(tmp,x=(pw-nw)/2,y=(ph-nh)/2,w=nw,h=nh)
     buf=io.BytesIO(bytes(pdf.output()))
-    msg=await q.message.reply_document(document=InputFile(buf,filename="KhmerBot.pdf"),caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ ចំនួន {len(photos)} ទំព័រ",reply_markup=mkb([IKB("🖼️ PDF ថ្មី",callback_data="menu_photo_pdf")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]),parse_mode=H)
+    msg=await q.message.reply_document(document=InputFile(buf,filename="KhmerBot.pdf"),caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ ចំនួន {len(photos)} ទំព័រ",reply_markup=mkb([IKB("🖼️ PDF ថ្មី",callback_data="menu_photo_pdf",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]),parse_mode=H)
     _save(ctx,msg); ctx.user_data["pdf_photos"]=[]; return END
 
 # ── Calculator ──────────────────────────────────────────────────────────────────
 CB=[["C","±","%","÷"],["7","8","9","×"],["4","5","6","−"],["1","2","3","+"],[" 0",".","⌫","="]]
 async def _calc_show(qm,ctx,ans=None):
     e=ctx.user_data.get("calc_expr",""); dp=ans or(e[-30:] if e else "0")
-    kb=InlineKeyboardMarkup([[IKB(b,callback_data=f"calc_{b.strip()}") for b in r] for r in CB]+[[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]])
+    kb=InlineKeyboardMarkup([[IKB(b,callback_data=f"calc_{b.strip()}") for b in r] for r in CB]+[[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]])
     t=f"🔢 <b>ម៉ាស៊ីនគណនា</b>\n━━━━━━━━━━━━\n<code> {dp}</code>\n━━━━━━━━━━━━"
     if hasattr(qm,"edit_message_text"): await qm.edit_message_text(t,reply_markup=kb,parse_mode=H)
 
@@ -426,20 +427,20 @@ async def pw_check(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     passed=sum(1 for _,(ok,_,_) in ck.items() if ok); issues=[g if ok else b for _,(ok,g,b) in ck.items() if b]
     lv,em=("ខ្សោយ","🔴") if passed<=2 else("មធ្យម","🟡") if passed<=4 else("ល្អ","🟢") if passed==5 else("ខ្លាំងណាស់","🟢✨")
     ent=round(math.log2(len(set(pw)))*len(pw),1) if len(set(pw))>1 else 0
-    await _edit(ctx,f"🔐 <b>លទ្ធផលពិនិត្យ Password</b>\n━━━━━━━━━━━━\n🔑 <tg-spoiler>{'•'*len(pw)}</tg-spoiler>\n━━━━━━━━━━━━\n{em} <b>កម្រិត:</b> {lv} | {passed}/6 ពិន្ទុ | {ent}b\n━━━━━━━━━━━━\n"+"\n".join(issues),mkb([IKB("🔄 ពិនិត្យ Password ថ្មី",callback_data="menu_password")],[IKB("🔑 បង្កើត Password",callback_data="menu_genpass")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])); return END
+    await _edit(ctx,f"🔐 <b>លទ្ធផលពិនិត្យ Password</b>\n━━━━━━━━━━━━\n🔑 <tg-spoiler>{'•'*len(pw)}</tg-spoiler>\n━━━━━━━━━━━━\n{em} <b>កម្រិត:</b> {lv} | {passed}/6 ពិន្ទុ | {ent}b\n━━━━━━━━━━━━\n"+"\n".join(issues),mkb([IKB("🔄 ពិនិត្យ Password ថ្មី",callback_data="menu_password",style=DANGER)],[IKB("🔑 បង្កើត Password",callback_data="menu_genpass",style=DANGER)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])); return END
 
 # ── Random Picker ───────────────────────────────────────────────────────────────
 async def picker(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     items=[x.strip() for x in u.message.text.strip().split(",") if x.strip()]; await u.message.delete()
     if len(items)<2: await _edit(ctx,"⚠️ <b>ត្រូវការ ≥2 ជម្រើស!</b>\nដាក់ , ចន្លោះ: <code>ក, ខ, គ</code>",bc()); return S_PICK
     c=random.choice(items); rk=random.sample(items,len(items))
-    await _edit(ctx,f"🎲 <b>Random Picker</b>\n━━━━━━━━━━━━\n🏆 <b>ជ្រើសបាន:</b> <code>{c}</code>\n━━━━━━━━━━━━\n📋 <b>លំដាប់ Random:</b>\n"+"\n".join(f"  {i}. {x}" for i,x in enumerate(rk,1)),mkb([IKB("🔄 Random ម្ដងទៀត",callback_data="menu_picker")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])); return END
+    await _edit(ctx,f"🎲 <b>Random Picker</b>\n━━━━━━━━━━━━\n🏆 <b>ជ្រើសបាន:</b> <code>{c}</code>\n━━━━━━━━━━━━\n📋 <b>លំដាប់ Random:</b>\n"+"\n".join(f"  {i}. {x}" for i,x in enumerate(rk,1)),mkb([IKB("🔄 Random ម្ដងទៀត",callback_data="menu_picker",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])); return END
 
 # ── Morse ───────────────────────────────────────────────────────────────────────
 async def morse(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     t=u.message.text.strip(); d=ctx.user_data.get("morse_dir","to"); await u.message.delete()
     r,h,lb=(t2m(t),"អក្សរ → Morse","Morse") if d=="to" else(m2t(t),"Morse → អក្សរ","អក្សរ")
-    await _edit(ctx,f"📡 <b>{h}</b>\n━━━━━━━━━━━━\n📥 Input: <code>{t[:200]}</code>\n📤 {lb}: <code>{r[:500]}</code>",mkb([IKB("🔄 ថ្មី",callback_data="menu_morse")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])); return END
+    await _edit(ctx,f"📡 <b>{h}</b>\n━━━━━━━━━━━━\n📥 Input: <code>{t[:200]}</code>\n📤 {lb}: <code>{r[:500]}</code>",mkb([IKB("🔄 ថ្មី",callback_data="menu_morse",style=PRIMARY)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])); return END
 
 # ── Base64 ──────────────────────────────────────────────────────────────────────
 async def b64(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -447,7 +448,7 @@ async def b64(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     try: r=base64.b64encode(t.encode()).decode() if d=="encode" else base64.b64decode(t.encode()).decode(); h="Encode" if d=="encode" else"Decode"; err=False
     except Exception as e: r=str(e); h="Error"; err=True
     em="🔐" if d=="encode" else"🔓"
-    await _edit(ctx,f"{em} <b>Base64 {h}</b>\n━━━━━━━━━━━━\n📥 Input:\n<code>{t[:200]}</code>\n\n{'❌' if err else '📤'} លទ្ធផល:\n<code>{r[:1000]}</code>",mkb([IKB("🔄 Base64 ថ្មី",callback_data="menu_base64")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])); return END
+    await _edit(ctx,f"{em} <b>Base64 {h}</b>\n━━━━━━━━━━━━\n📥 Input:\n<code>{t[:200]}</code>\n\n{'❌' if err else '📤'} លទ្ធផល:\n<code>{r[:1000]}</code>",mkb([IKB("🔄 Base64 ថ្មី",callback_data="menu_base64",style=DANGER)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])); return END
 
 # ── Text Counter ────────────────────────────────────────────────────────────────
 async def count_text(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -473,7 +474,7 @@ async def count_text(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         f"🔢 លេខ: <b>{digits:,}</b>\n"
         f"😊 Emoji: <b>{emojis}</b>\n"
         f"💾 ទំហំ: <b>{size_b:,} bytes</b>",
-        mkb([IKB("🔄 រាប់អក្សរថ្មី",callback_data="menu_count")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])); return END
+        mkb([IKB("🔄 រាប់អក្សរថ្មី",callback_data="menu_count",style=PRIMARY)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])); return END
 
 # ── Number Base Converter ────────────────────────────────────────────────────────
 async def nbase_convert(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -489,7 +490,7 @@ async def nbase_convert(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"2️⃣ លេខ២ (Binary):   <code>{bin(n)[2:]}</code>\n"
             f"8️⃣ លេខ៨ (Octal):    <code>{oct(n)[2:]}</code>\n"
             f"🔡 Hex:              <code>{hex(n)[2:].upper()}</code>",
-            mkb([IKB("🔄 ប្ដូរថ្មី",callback_data="menu_nbase")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]))
+            mkb([IKB("🔄 ប្ដូរថ្មី",callback_data="menu_nbase",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]))
     except: await _edit(ctx,"❌ <b>លេខមិនត្រឹមត្រូវ!</b>\nសូមវាយឡើងវិញ",bc())
     return END
 
@@ -508,7 +509,7 @@ async def temp_convert(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"🌡 Kelvin:     <b>{k:.2f} K</b>\n"
             f"━━━━━━━━━━━━\n"
             f"{'🥶 ត្រជាក់ខ្លាំង' if c<0 else '❄️ ត្រជាក់' if c<15 else '😊 ធម្មតា' if c<28 else '☀️ ក្ដៅ' if c<38 else '🔥 ក្ដៅខ្លាំងណាស់'}",
-            mkb([IKB("🔄 ប្ដូរថ្មី",callback_data="menu_temp")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]))
+            mkb([IKB("🔄 ប្ដូរថ្មី",callback_data="menu_temp",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]))
     except: await _edit(ctx,"❌ <b>លេខមិនត្រឹមត្រូវ!</b>\nសូមវាយឡើងវិញ",bc())
     return END
 
@@ -528,7 +529,7 @@ async def hash_gen(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         f"🟢 SHA-1:\n<code>{sha1}</code>\n\n"
         f"🟡 SHA-256:\n<code>{sha256}</code>\n\n"
         f"🔴 SHA-512 (32):\n<code>{sha512}</code>",
-        mkb([IKB("🔄 Hash ថ្មី",callback_data="menu_hash")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")])); return END
+        mkb([IKB("🔄 Hash ថ្មី",callback_data="menu_hash",style=DANGER)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)])); return END
 
 # ── Date / Age Calculator ─────────────────────────────────────────────────────
 async def date_calc(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -551,7 +552,7 @@ async def date_calc(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"🎉 អាយុ: <b>{age_y} ឆ្នាំ {age_m} ខែ {age_d} ថ្ងៃ</b>\n"
             f"📊 សរុបថ្ងៃ: <b>{total_days:,} ថ្ងៃ</b>\n"
             f"⏳ ខួបកំណើតទៀត: <b>{days_to_bday} ថ្ងៃ</b>",
-            mkb([IKB("🔄 គណនាថ្មី",callback_data="menu_date")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]))
+            mkb([IKB("🔄 គណនាថ្មី",callback_data="menu_date",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]))
     except: await _edit(ctx,"❌ <b>ទ្រង់ទ្រាយខុស!</b>\nសូមវាយ: <code>DD/MM/YYYY</code>\nឧ: <code>15/06/1995</code>",bc())
     return END
 
@@ -608,7 +609,7 @@ async def unit_convert(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         f"📏 <b>ប្ដូរ{lbl.get(utype,utype)}</b>\n━━━━━━━━━━━━\n"
         f"📥 Input: <b>{val:g} {parts[1]}</b>\n━━━━━━━━━━━━\n"
         +"\n".join(rows),
-        mkb([IKB("🔄 ប្ដូរថ្មី",callback_data=f"unit_{utype}")],[IKB("📏 ប្រភេទផ្សេង",callback_data="menu_unit")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]))
+        mkb([IKB("🔄 ប្ដូរថ្មី",callback_data=f"unit_{utype}",style=SUCCESS)],[IKB("📏 ប្រភេទផ្សេង",callback_data="menu_unit",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]))
     return END
 
 # ── BMI Calculator ────────────────────────────────────────────────────────────
@@ -637,7 +638,7 @@ async def bmi_calc(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"━━━━━━━━━━━━\n"
             f"🎯 ទម្ងន់គួរមាន: <b>{ideal_low:.1f}–{ideal_high:.1f} kg</b>\n"
             f"{tip}",
-            mkb([IKB("🔄 គណនាថ្មី",callback_data="menu_bmi")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]))
+            mkb([IKB("🔄 គណនាថ្មី",callback_data="menu_bmi",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]))
     except: await _edit(ctx,"❌ <b>លេខមិនត្រឹមត្រូវ!</b>\nឧ: <code>65 170</code>",bc())
     return END
 
@@ -674,7 +675,7 @@ async def loan_calc(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"💰 <b>ការប្រាក់{lbl[ltype]}</b>\n━━━━━━━━━━━━\n"
             f"⏱ {months} ខែ  •  {annual_rate}%/ឆ្នាំ\n━━━━━━━━━━━━\n"
             +rows,
-            mkb([IKB("🔄 គណនាថ្មី",callback_data="menu_loan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main")]))
+            mkb([IKB("🔄 គណនាថ្មី",callback_data="menu_loan",style=SUCCESS)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="back_main",style=PRIMARY)]))
     except: await _edit(ctx,"❌ <b>លេខមិនត្រឹមត្រូវ!</b>\nឧ: <code>10000 5 12</code>",bc())
     return END
 
