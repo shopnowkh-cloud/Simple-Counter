@@ -107,7 +107,7 @@ async def text_style(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     def _preview(fn,text,maxlen=16):
         s=fn(text); return s[:maxlen]+("…" if len(s)>maxlen else "")
     ks=list(TS.keys())
-    btns=[[IKB(f"📋 {_preview(TS[ks[i]][1],t)}",copy_text=CopyTextButton(text=TS[ks[i]][1](t))) for i in range(j,min(j+2,len(ks)))] for j in range(0,len(ks),2)]
+    btns=[[IKB(_preview(TS[ks[i]][1],t),copy_text=CopyTextButton(text=TS[ks[i]][1](t))) for i in range(j,min(j+2,len(ks)))] for j in range(0,len(ks),2)]
     btns+=[[IKB("✍️ ដំណើរការថ្មី",callback_data="menu_text_style")],HOME]
     await _edit(ctx,f"✍️ <b>Style ទាំងអស់សម្រាប់:</b> <code>{t}</code>\n━━━━━━━━━━━━\n👇 ចុចប៊ូតុង Copy ម្តង!",InlineKeyboardMarkup(btns)); return S_STYLE
 
