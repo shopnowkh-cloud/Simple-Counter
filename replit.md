@@ -1,36 +1,41 @@
-# [Project name]
+# Khmer Multi-Tool Telegram Bot
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A Telegram bot offering a wide range of utilities in the Khmer language — QR code generation/scanning, text styling, unit conversion, security tools, and financial calculators.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Run the bot: `python3 bot.py`
+- Required secret: `BOT_TOKEN` — your Telegram Bot API token (from @BotFather)
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Python 3.12
+- python-telegram-bot >= 22.7
+- Libraries: qrcode, opencv-python, pyzbar, pillow, fpdf2, numpy, python-dateutil
+- System deps (via Nix): zbar (for QR scanning)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `bot.py` — all bot logic, command handlers, and utility functions
+- `main.py` — simple entry point (unused; bot runs via bot.py)
+- `pyproject.toml` — Python project config and dependencies
+- `replit.nix` — system-level Nix dependencies
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Single-file bot architecture; all handlers in `bot.py`
+- Uses ConversationHandler pattern to manage multi-step tool states
+- All UI strings are in Khmer
+- BOT_TOKEN read from environment variable at startup; raises RuntimeError if missing
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Users interact with the bot on Telegram to access tools for:
+- QR Tools: Create and Scan QR codes
+- Text & Document: Text styling, Image to PDF, Morse code, character count
+- Math & Convert: Calculator, Temperature, Base conversion, Unit conversion, BMI, Loan calculator
+- Security: Password strength check, password generation, Base64 encode/decode, hashing (MD5/SHA256)
+- Fun & Utility: Random picker, Dice/coin, World clock, Age calculator
 
 ## User preferences
 
@@ -38,8 +43,5 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+- `zbar` system library must be present (handled by replit.nix) for pyzbar/QR scanning to work
+- `BOT_TOKEN` must be set as a Replit secret before the bot will start
