@@ -174,25 +174,37 @@ async def pdf2img_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
     return S_DOC
 
-async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+async def _back_main(u,ctx):
     await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=KB_MAIN,parse_mode=H)
     return S_MAIN
+
+async def _catch_main(u,ctx): return await _back_main(u,ctx)
+async def _catch_doc(u,ctx): return await go_doc(u,ctx)
+async def _catch_style(u,ctx):
+    await u.message.reply_text("✏️ វាយ <b>អក្សរឡាតាំង</b>:",reply_markup=KB_CANCEL,parse_mode=H); return S_STYLE
+async def _catch_pdf(u,ctx):
+    n=len(ctx.user_data.get("pdf_photos",[]))
+    kb=kb_pdf(n) if n>0 else KB_CANCEL
+    await u.message.reply_text("📤 Upload <b>រូបភាព</b> (photo/file)!",reply_markup=kb,parse_mode=H); return S_PDF
+async def _catch_pdf2img(u,ctx):
+    await u.message.reply_text("📎 Upload <b>ឯកសារ PDF</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF2IMG
 
 def main():
     app=Application.builder().token(BOT_TOKEN).connect_timeout(10).read_timeout(30).write_timeout(30).pool_timeout(10).build()
     TXT=filters.TEXT&~filters.COMMAND
     IMG=filters.PHOTO|filters.Document.IMAGE
-    PDF_F=filters.Document.MimeType("application/pdf")
+    PDF_F=filters.Document.MimeType("application/pdf")|filters.Document.FileExtension("pdf")
+    ANY=filters.ALL
     app.add_handler(ConversationHandler(
-        entry_points=[CommandHandler("start",cmd_start),MessageHandler(TXT,main_handler),MessageHandler(filters.ALL,cmd_start)],
+        entry_points=[CommandHandler("start",cmd_start),MessageHandler(TXT,main_handler),MessageHandler(ANY,cmd_start)],
         states={
-            S_MAIN:    [MessageHandler(TXT,main_handler)],
-            S_DOC:     [MessageHandler(TXT,doc_handler)],
-            S_STYLE:   [MessageHandler(TXT,style_handler)],
-            S_PDF:     [MessageHandler(TXT|IMG,pdf_handler)],
-            S_PDF2IMG: [MessageHandler(TXT|PDF_F,pdf2img_handler)],
+            S_MAIN:    [MessageHandler(TXT,main_handler),    MessageHandler(ANY,_catch_main)],
+            S_DOC:     [MessageHandler(TXT,doc_handler),     MessageHandler(ANY,_catch_doc)],
+            S_STYLE:   [MessageHandler(TXT,style_handler),   MessageHandler(ANY,_catch_style)],
+            S_PDF:     [MessageHandler(TXT|IMG,pdf_handler), MessageHandler(ANY,_catch_pdf)],
+            S_PDF2IMG: [MessageHandler(TXT|PDF_F,pdf2img_handler), MessageHandler(ANY,_catch_pdf2img)],
         },
-        fallbacks=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
+        fallbacks=[CommandHandler("start",cmd_start),MessageHandler(ANY,_back_main)],
         per_message=False,allow_reentry=True,
     ))
     logger.info("🤖 Bot កំពុង Start..."); app.run_polling(allowed_updates=Update.ALL_TYPES,poll_interval=1.0,drop_pending_updates=True)
