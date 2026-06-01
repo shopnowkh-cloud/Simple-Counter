@@ -126,7 +126,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 # ── text style ────────────────────────────────────────────────────────────────
 async def style_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     t=u.message.text
-    rows=[[IKB(f"{lbl}:  {fn(t)}",copy_text=CopyTextButton(fn(t)))] for lbl,fn in TS]
+    rows=[[IKB(fn(t),copy_text=CopyTextButton(fn(t)))] for lbl,fn in TS]
     rows.append([IKB("✍️ ដំណើរការថ្មី",callback_data="style_new"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")])
     kb=IKM(rows); txt=f"✍️ <b>Style:</b> <code>{t}</code>\n👇 ចុច button ដើម្បី <b>Copy</b>"
     cid=u.message.chat_id; mid=ctx.user_data.get("mid")
