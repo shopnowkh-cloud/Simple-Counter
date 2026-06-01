@@ -201,16 +201,21 @@ async def qr_create_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await u.message.reply_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=KB_CANCEL,parse_mode=H)
         return S_QR_SCAN
     try:
-        qr=qrcode.QRCode(version=None,error_correction=qrcode.constants.ERROR_CORRECT_H,box_size=30,border=4)
-        qr.add_data(t); qr.make(fit=True)
-        img=qr.make_image(fill_color="#000000",back_color="#FFFFFF").convert("RGB")
-        size=max(img.size); target=2048
-        img=img.resize((target,target),Image.NEAREST)
+        ec_levels=[qrcode.constants.ERROR_CORRECT_H,qrcode.constants.ERROR_CORRECT_Q,qrcode.constants.ERROR_CORRECT_M,qrcode.constants.ERROR_CORRECT_L]
+        ec_names= ["H","Q","M","L"]
+        qr_img=None; used_ec="H"
+        for ec,name in zip(ec_levels,ec_names):
+            try:
+                qr=qrcode.QRCode(version=None,error_correction=ec,box_size=30,border=4)
+                qr.add_data(t); qr.make(fit=True); qr_img=qr.make_image(fill_color="#000000",back_color="#FFFFFF").convert("RGB"); used_ec=name; break
+            except Exception: qr.clear()
+        if qr_img is None: raise ValueError("Text វែងពេក!")
+        img=qr_img.resize((2048,2048),Image.NEAREST)
         buf=io.BytesIO(); img.save(buf,format="PNG",optimize=False,compress_level=1); buf.seek(0)
-        await u.message.reply_document(document=InputFile(buf,filename="QRCode_HD.png"),caption=f"✅ <b>QR Code HD បង្កើតជោគជ័យ!</b>\n📐 2048×2048 px\n\n📝 <code>{t}</code>",reply_markup=KB_QR_CREATE_DONE,parse_mode=H)
+        await u.message.reply_document(document=InputFile(buf,filename="QRCode_HD.png"),caption=f"✅ <b>QR Code HD បង្កើតជោគជ័យ!</b>\n📐 2048×2048 px  |  EC: {used_ec}\n\n📝 <code>{t}</code>",reply_markup=KB_QR_CREATE_DONE,parse_mode=H)
     except Exception as e:
         logger.error(f"qr_create: {e}")
-        await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
+        await u.message.reply_text("❌ <b>Text វែងពេក! សូម​វាយ​ខ្លី​ជាង</b> (max ~2000 chars)",reply_markup=KB_CANCEL,parse_mode=H)
     return S_QR
 
 async def qr_scan_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
