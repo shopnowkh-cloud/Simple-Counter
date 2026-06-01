@@ -166,8 +166,9 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
         pdf.image(tmp,x=0,y=0,w=pw,h=ph)
     buf=io.BytesIO(bytes(pdf.output()))
     await ctx.bot.send_document(chat_id=q.message.chat_id,document=InputFile(buf,filename="KhmerBot.pdf"),
-        caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ {len(photos)} ទំព័រ",reply_markup=IK_PDF_DONE,parse_mode=H)
-    ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("mid",None); return S_DOC
+        caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ {len(photos)} ទំព័រ",parse_mode=H)
+    msg=await ctx.bot.send_message(chat_id=q.message.chat_id,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
+    ctx.user_data["pdf_photos"]=[]; _save(ctx,msg); return S_MAIN
 
 # ── PDF → image ───────────────────────────────────────────────────────────────
 async def pdf2img(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -185,15 +186,16 @@ async def pdf2img(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             buf=io.BytesIO(); img.save(buf,format=pil_fmt,quality=90 if fmt=="JPG" else None); buf.seek(0)
             media.append((buf,f"page_{i+1:02d}.{ext}"))
         doc.close()
-        done_kb=ik_img_done(fmt)
         for idx,(buf,name) in enumerate(media):
             last=idx==len(media)-1
             cap=f"✅ <b>{'បំប្លែងជោគជ័យ! 1 ទំព័រ' if total==1 else f'ទំព័រ {idx+1}/{total}' if not last else f'រួចរាល់! {total} ទំព័រ → {fmt}'}</b>"
-            await u.message.reply_document(document=InputFile(buf,filename=name),caption=cap,reply_markup=done_kb if last else None,parse_mode=H)
+            await u.message.reply_document(document=InputFile(buf,filename=name),caption=cap,parse_mode=H)
+        msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
+        _save(ctx,msg)
     except Exception as e:
         logger.error(f"pdf2img: {e}")
         await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
-    return S_DOC
+    return S_MAIN
 
 # ── QR create ─────────────────────────────────────────────────────────────────
 async def qr_create(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -225,12 +227,13 @@ async def qr_create(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             part_info=f" ({idx+1}/{total})" if total>1 else ""
             last=idx==total-1
             cap=f"✅ <b>QR Code HD{part_info}</b>\n📐 2048×2048  |  EC: {ec}\n\n📝 <code>{chunk[:80]}{'…' if len(chunk)>80 else ''}</code>"
-            sent=await u.message.reply_document(document=InputFile(buf,filename=fname),caption=cap,reply_markup=IK_QR_CR_DONE if last else None,parse_mode=H)
-            if last: _save(ctx,sent)
+            await u.message.reply_document(document=InputFile(buf,filename=fname),caption=cap,parse_mode=H)
+        msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
+        _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_create: {e}")
         await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
-    return S_QR
+    return S_MAIN
 
 # ── QR scan ───────────────────────────────────────────────────────────────────
 async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -245,12 +248,13 @@ async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         if not codes:
             await _edit_or_send(ctx,cid,"❌ <b>រកមិនឃើញ QR Code!</b>\nសូម Upload រូបភាពច្បាស់ជាង",IK_CANCEL); return S_QR_SCAN
         lines="\n\n".join(f"📌 <b>លទ្ធផលទី {i+1}:</b>\n<code>{c.data.decode('utf-8','replace')}</code>" for i,c in enumerate(codes))
-        msg=await u.message.reply_text(f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",reply_markup=IK_QR_SC_DONE,parse_mode=H)
+        await u.message.reply_text(f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",parse_mode=H)
+        msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
         _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_scan: {e}")
         await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
-    return S_QR
+    return S_MAIN
 
 # ── fallback ──────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
