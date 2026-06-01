@@ -303,16 +303,16 @@ async def qr_create(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         CHUNK=2800; raw=t.encode("utf-8")
         chunks=[raw[i:i+CHUNK].decode("utf-8","ignore") for i in range(0,len(raw),CHUNK)]
         total=len(chunks)
-        msg=await u.message.reply_text(f"⏳ <b>កំពុងបង្កើត {total} QR Code{'s' if total>1 else ''}...</b>",parse_mode=H)
-        _save(ctx,msg)
+        loading_msg=await u.message.reply_text(f"⏳ <b>កំពុងបង្កើត {total} QR Code{'s' if total>1 else ''}...</b>",parse_mode=H)
         for idx,chunk in enumerate(chunks):
             buf,ec=_make_qr_buf(chunk)
             if buf is None: raise ValueError(f"chunk {idx+1} fail")
             fname=f"QRCode_HD{'_p'+str(idx+1) if total>1 else ''}.png"
             part_info=f" ({idx+1}/{total})" if total>1 else ""
-            last=idx==total-1
             cap=f"✅ <b>QR Code HD{part_info}</b>\n📐 2048×2048  |  EC: {ec}\n\n📝 <code>{chunk[:80]}{'…' if len(chunk)>80 else ''}</code>"
             await u.message.reply_document(document=InputFile(buf,filename=fname),caption=cap,parse_mode=H)
+        try: await loading_msg.delete()
+        except: pass
         msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
         _save(ctx,msg)
     except Exception as e:
