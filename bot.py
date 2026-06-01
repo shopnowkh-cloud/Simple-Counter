@@ -3,30 +3,45 @@
 import os,io,logging,warnings
 from PIL import Image; from fpdf import FPDF; import fitz
 import qrcode; from pyzbar import pyzbar
-from telegram import Update,ReplyKeyboardMarkup,ReplyKeyboardRemove,InputFile
-from telegram.ext import Application,CommandHandler,MessageHandler,ConversationHandler,ContextTypes,filters
+from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup as IKM,InputFile
+from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode; from telegram.warnings import PTBUserWarning
 warnings.filterwarnings("ignore",category=PTBUserWarning)
 BOT_TOKEN=os.environ.get("BOT_TOKEN","")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណត់!")
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
-S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN=range(8); H=ParseMode.HTML; END=ConversationHandler.END
+S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN=range(8)
+H=ParseMode.HTML; END=ConversationHandler.END
 
-# ── keyboards ─────────────────────────────────────────────────────────────────
-def _rk(*rows): return ReplyKeyboardMarkup(list(rows),resize_keyboard=True)
-KB_MAIN   = _rk(["✍️ រចនាប័ទ្មអក្សរ","🗂️ បំប្លែង PDF"],["📷 QR Code"])
-KB_DOC    = _rk(["🖼️ រូបភាព → PDF"],["🖼️ PDF → PNG","📷 PDF → JPG"],["🏠 ម៉ឺនុយមេ"])
-KB_QR     = _rk(["🔳 បង្កើត QR","🔍 Scan QR"],["🏠 ម៉ឺនុយមេ"])
-KB_QR_CREATE_DONE = _rk(["🔳 QR ថ្មី","🔍 Scan QR"],["🏠 ម៉ឺនុយមេ"])
-KB_QR_SCAN_DONE   = _rk(["🔍 Scan ថ្មី","🔳 បង្កើត QR"],["🏠 ម៉ឺនុយមេ"])
-KB_CANCEL = _rk(["❌ បោះបង់"])
-KB_STYLE  = _rk(["✍️ ដំណើរការថ្មី","🏠 ម៉ឺនុយមេ"])
-KB_PDF_DONE = _rk(["🖼️ PDF ថ្មី","🏠 ម៉ឺនុយមេ"])
-REM = ReplyKeyboardRemove()
-KB_PDF_BUILD = _rk(["✅ បង្កើត PDF","❌ បោះបង់"])
-def kb_pdf(n): return _rk([f"✅ បង្កើត PDF ({n} រូប)","❌ បោះបង់"])
-def kb_img_done(fmt): return _rk([f"🔄 {'PNG' if fmt=='PNG' else 'JPG'} ថ្មី","🏠 ម៉ឺនុយមេ"])
+# ── inline keyboards ──────────────────────────────────────────────────────────
+def mkb(rows): return IKM(rows)
+IK_MAIN  = mkb([[IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="style"),IKB("🗂️ បំប្លែង PDF",callback_data="doc")],[IKB("📷 QR Code",callback_data="qr")]])
+IK_DOC   = mkb([[IKB("🖼️ រូបភាព → PDF",callback_data="photo_pdf")],[IKB("🖼️ PDF → PNG",callback_data="pdf_png"),IKB("📷 PDF → JPG",callback_data="pdf_jpg")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+IK_QR    = mkb([[IKB("🔳 បង្កើត QR",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+IK_CANCEL= mkb([[IKB("❌ បោះបង់",callback_data="cancel")]])
+IK_STYLE = mkb([[IKB("✍️ ដំណើរការថ្មី",callback_data="style_new"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+IK_QR_CR_DONE  = mkb([[IKB("🔳 QR ថ្មី",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+IK_QR_SC_DONE  = mkb([[IKB("🔍 Scan ថ្មី",callback_data="qr_scan"),IKB("🔳 បង្កើត QR",callback_data="qr_create")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+def ik_pdf(n): return mkb([[IKB(f"✅ បង្កើត PDF ({n} រូប)",callback_data="pdf_build"),IKB("❌ បោះបង់",callback_data="doc")]])
+def ik_img_done(fmt): return mkb([[IKB(f"🔄 {'PNG' if fmt=='PNG' else 'JPG'} ថ្មី",callback_data="pdf_png" if fmt=="PNG" else "pdf_jpg"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+
+# ── helpers ───────────────────────────────────────────────────────────────────
+def _save(ctx,msg):
+    ctx.user_data["cid"]=msg.chat_id; ctx.user_data["mid"]=msg.message_id
+
+async def _send(ctx,cid,text,kb=None):
+    msg=await ctx.bot.send_message(chat_id=cid,text=text,reply_markup=kb,parse_mode=H)
+    _save(ctx,msg); return msg
+
+async def _edit_or_send(ctx,cid,text,kb=None):
+    mid=ctx.user_data.get("mid")
+    if mid:
+        try:
+            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=text,reply_markup=kb,parse_mode=H); return
+        except: pass
+    await _send(ctx,cid,text,kb)
 
 # ── text style maps ───────────────────────────────────────────────────────────
 def _t(t,m): return "".join(m.get(c,c) for c in t)
@@ -46,107 +61,102 @@ BB ={**_rng(0x24B6,0x41,0x5B,0x41),**_rng(0x24D0,0x61,0x7B,0x61),**{"0":"\u24ea"
 UD ={"a":"ɐ","b":"q","c":"ɔ","d":"p","e":"ǝ","f":"ɟ","g":"ƃ","h":"ɥ","i":"ᴉ","j":"ɾ","k":"ʞ","l":"l","m":"ɯ","n":"u","o":"o","p":"d","q":"b","r":"ɹ","s":"s","t":"ʇ","u":"n","v":"ʌ","w":"ʍ","x":"x","y":"ʎ","z":"z","A":"∀","B":"ᗺ","C":"Ɔ","D":"ᗡ","E":"Ǝ","F":"Ⅎ","G":"פ","H":"H","I":"I","J":"ſ","K":"ʞ","L":"˥","M":"W","N":"N","O":"O","P":"Ԁ","Q":"Q","R":"ɹ","S":"S","T":"┴","U":"∩","V":"Λ","W":"M","X":"X","Y":"⅄","Z":"Z","0":"0","1":"Ɩ","2":"ᄅ","3":"Ɛ","4":"ᔭ","5":"ϛ","6":"9","7":"ㄥ","8":"8","9":"6"," ":" "}
 SUPM={"a":"ᵃ","b":"ᵇ","c":"ᶜ","d":"ᵈ","e":"ᵉ","f":"ᶠ","g":"ᵍ","h":"ʰ","i":"ⁱ","j":"ʲ","k":"ᵏ","l":"ˡ","m":"ᵐ","n":"ⁿ","o":"ᵒ","p":"ᵖ","q":"q","r":"ʳ","s":"ˢ","t":"ᵗ","u":"ᵘ","v":"ᵛ","w":"ʷ","x":"ˣ","y":"ʸ","z":"ᶻ","A":"ᴬ","B":"ᴮ","C":"ᶜ","D":"ᴰ","E":"ᴱ","F":"ᶠ","G":"ᴳ","H":"ᴴ","I":"ᴵ","J":"ᴶ","K":"ᴷ","L":"ᴸ","M":"ᴹ","N":"ᴺ","O":"ᴼ","P":"ᴾ","Q":"Q","R":"ᴿ","S":"ˢ","T":"ᵀ","U":"ᵁ","V":"\u2c7d","W":"ᵂ","X":"ˣ","Y":"ʸ","Z":"ᶻ","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"}
 TS=[
-    ("𝗕𝗼𝗹𝗱",           lambda t:_t(t,BM)),
-    ("𝘐𝘵𝘢𝘭𝘪𝘤",         lambda t:_t(t,IM)),
-    ("𝑩𝒐𝒍𝒅 𝑰𝒕𝒂𝒍𝒊𝒄",   lambda t:_t(t,BIM)),
-    ("𝒮𝒸𝓇𝒾𝓅𝓉",         lambda t:_t(t,SM)),
-    ("𝓑𝓸𝓵𝓭 𝓢𝓬𝓻𝓲𝓹𝓽",  lambda t:_t(t,BSM)),
-    ("𝔻𝕠𝕦𝕓𝕝𝕖",         lambda t:_t(t,DM)),
-    ("𝔊𝔬𝔱𝔥𝔦𝔠",         lambda t:_t(t,FM)),
-    ("𝖲𝖺𝗇𝗌",            lambda t:_t(t,SFM)),
-    ("𝙼𝚘𝚗𝚘",            lambda t:_t(t,MOM)),
-    ("Ｆｕｌｌｗｉｄｔｈ",  lambda t:_t(t,FW)),
-    ("ˢᵘᵖᵉʳˢᶜʳⁱᵖᵗ",     lambda t:_t(t,SUPM)),
-    ("Sᴍᴀʟʟ Cᴀᴘꜱ",      lambda t:_t(t.lower(),SC)),
-    ("Ⓑⓤⓑⓑⓛⓔ",        lambda t:_t(t,BB)),
-    ("uʍop ǝpᴉsdn",      lambda t:_t(t,UD)[::-1]),
-    ("S\u0336t\u0336r\u0336i\u0336k\u0336e\u0336", lambda t:"".join(c+"\u0336" for c in t)),
-    ("U\u0332n\u0332d\u0332e\u0332r\u0332",         lambda t:"".join(c+"\u0332" for c in t)),
+    ("𝗕𝗼𝗹𝗱",          lambda t:_t(t,BM)),
+    ("𝘐𝘵𝘢𝘭𝘪𝘤",        lambda t:_t(t,IM)),
+    ("𝑩𝒐𝒍𝒅 𝑰𝒕𝒂𝒍𝒊𝒄",  lambda t:_t(t,BIM)),
+    ("𝒮𝒸𝓇𝒾𝓅𝓉",        lambda t:_t(t,SM)),
+    ("𝓑𝓸𝓵𝓭 𝓢𝓬𝓻𝓲𝓹𝓽", lambda t:_t(t,BSM)),
+    ("𝔻𝕠𝕦𝕓𝕝𝕖",        lambda t:_t(t,DM)),
+    ("𝔊𝔬𝔱𝔥𝔦𝔠",        lambda t:_t(t,FM)),
+    ("𝖲𝖺𝗇𝗌",           lambda t:_t(t,SFM)),
+    ("𝙼𝚘𝚗𝚘",           lambda t:_t(t,MOM)),
+    ("Ｆｕｌｌｗｉｄｔｈ", lambda t:_t(t,FW)),
+    ("ˢᵘᵖᵉʳˢᶜʳⁱᵖᵗ",    lambda t:_t(t,SUPM)),
+    ("Sᴍᴀʟʟ Cᴀᴘꜱ",     lambda t:_t(t.lower(),SC)),
+    ("Ⓑⓤⓑⓑⓛⓔ",       lambda t:_t(t,BB)),
+    ("uʍop ǝpᴉsdn",     lambda t:_t(t,UD)[::-1]),
+    ("S\u0336t\u0336r\u0336i\u0336k\u0336e\u0336",lambda t:"".join(c+"\u0336" for c in t)),
+    ("U\u0332n\u0332d\u0332e\u0332r\u0332",       lambda t:"".join(c+"\u0332" for c in t)),
 ]
 
-# ── nav helpers ───────────────────────────────────────────────────────────────
-async def go_main(u,ctx):
-    ctx.user_data.clear()
-    await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=KB_MAIN,parse_mode=H)
-    return S_MAIN
-
-async def go_doc(u,ctx):
-    await u.message.reply_text("🗂️ <b>បំប្លែង PDF</b>\nជ្រើស:",reply_markup=KB_DOC,parse_mode=H)
-    return S_DOC
-
-async def go_qr(u,ctx):
-    await u.message.reply_text("📷 <b>QR Code</b>\nជ្រើស:",reply_markup=KB_QR,parse_mode=H)
-    return S_QR
-
-# ── handlers ──────────────────────────────────────────────────────────────────
+# ── /start ────────────────────────────────────────────────────────────────────
 async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data.clear()
-    await u.message.reply_text(f"👋 សួស្ដី <b>{u.effective_user.first_name}</b>!\n👇 <b>ជ្រើសរើស:</b>",reply_markup=KB_MAIN,parse_mode=H)
-    return S_MAIN
+    msg=await u.message.reply_text(f"👋 សួស្ដី <b>{u.effective_user.first_name}</b>!\n👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
+    _save(ctx,msg); return S_MAIN
 
-async def main_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text
-    if t=="✍️ រចនាប័ទ្មអក្សរ":
-        await u.message.reply_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ វាយ <b>អក្សរឡាតាំង</b>:\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=KB_CANCEL,parse_mode=H)
-        return S_STYLE
-    if t=="🗂️ បំប្លែង PDF": return await go_doc(u,ctx)
-    if t=="📷 QR Code": return await go_qr(u,ctx)
-    await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=KB_MAIN,parse_mode=H)
-    return S_MAIN
+# ── unified callback handler ───────────────────────────────────────────────────
+async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    q=u.callback_query; await q.answer(); d=q.data
+    cid=q.message.chat_id; _save(ctx,q.message)
 
+    if d=="home":
+        ctx.user_data.clear(); _save(ctx,q.message)
+        await q.edit_message_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
+
+    if d=="style" or d=="style_new":
+        await q.edit_message_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ វាយ <b>អក្សរឡាតាំង</b>:\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=IK_CANCEL,parse_mode=H); return S_STYLE
+
+    if d=="doc" or d=="cancel":
+        ctx.user_data.pop("pdf_photos",None); ctx.user_data.pop("pdf_mid",None)
+        await q.edit_message_text("🗂️ <b>បំប្លែង PDF</b>\nជ្រើស:",reply_markup=IK_DOC,parse_mode=H); return S_DOC
+
+    if d=="photo_pdf":
+        ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("pdf_mid",None)
+        await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n📤 Upload រូបភាព:",reply_markup=IK_CANCEL,parse_mode=H); return S_PDF
+
+    if d in("pdf_png","pdf_jpg"):
+        ctx.user_data["pdf2img_fmt"]="PNG" if d=="pdf_png" else "JPG"
+        lbl="PNG" if d=="pdf_png" else "JPG"; ico="🖼️" if d=="pdf_png" else "📷"
+        await q.edit_message_text(f"{ico} <b>PDF → {lbl}</b>\n📎 Upload PDF:",reply_markup=IK_CANCEL,parse_mode=H); return S_PDF2IMG
+
+    if d=="pdf_build":
+        return await _pdf_build(q,ctx)
+
+    if d=="qr":
+        await q.edit_message_text("📷 <b>QR Code</b>\nជ្រើស:",reply_markup=IK_QR,parse_mode=H); return S_QR
+
+    if d=="qr_create":
+        await q.edit_message_text("🔳 <b>បង្កើត QR Code</b>\n\n✏️ វាយ <b>Link / Text</b>:",reply_markup=IK_CANCEL,parse_mode=H); return S_QR_CREATE
+
+    if d=="qr_scan":
+        await q.edit_message_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=IK_CANCEL,parse_mode=H); return S_QR_SCAN
+
+    await q.edit_message_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
+
+# ── text style ────────────────────────────────────────────────────────────────
 async def style_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     t=u.message.text
-    if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_main(u,ctx)
-    if t=="✍️ ដំណើរការថ្មី":
-        await u.message.reply_text("✏️ វាយ <b>អក្សរឡាតាំង</b>:",reply_markup=KB_CANCEL,parse_mode=H); return S_STYLE
     lines="\n".join(f"<b>{lbl}:</b>  <code>{fn(t)}</code>" for lbl,fn in TS)
-    await u.message.reply_text(
+    msg=await u.message.reply_text(
         f"✍️ <b>Style:</b> <code>{t}</code>\n━━━━━━━━━\n{lines}\n━━━━━━━━━\n👆 ចុចលើ code ដើម្បី Copy",
-        reply_markup=KB_STYLE,parse_mode=H)
-    return S_STYLE
+        reply_markup=IK_STYLE,parse_mode=H)
+    _save(ctx,msg); return S_STYLE
 
-async def doc_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text
-    if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_main(u,ctx)
-    if t in("🖼️ រូបភាព → PDF","🖼️ PDF ថ្មី"):
-        ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("pdf_mid",None)
-        await u.message.reply_text("🖼️ <b>រូបភាព → PDF</b>\n📤 Upload រូបភាព:",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF
-    if t in("🖼️ PDF → PNG","🔄 PNG ថ្មី"):
-        ctx.user_data["pdf2img_fmt"]="PNG"
-        await u.message.reply_text("🖼️ <b>PDF → PNG</b>\n📎 Upload PDF:",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF2IMG
-    if t in("📷 PDF → JPG","🔄 JPG ថ្មី"):
-        ctx.user_data["pdf2img_fmt"]="JPG"
-        await u.message.reply_text("📷 <b>PDF → JPG</b>\n📎 Upload PDF:",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF2IMG
-    return await go_doc(u,ctx)
-
-async def pdf_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text or ""
-    if t:
-        if t.startswith("✅ បង្កើត PDF"): return await _pdf_build(u,ctx)
-        if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_doc(u,ctx)
-        await u.message.reply_text("📤 Upload រូបភាព!",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF
+# ── image → PDF ───────────────────────────────────────────────────────────────
+async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     p=u.message.photo[-1] if u.message.photo else None
     dc=u.message.document if u.message.document else None
     if not p and not dc:
-        await u.message.reply_text("⚠️ Upload រូបភាព!",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF
+        cid=u.message.chat_id; await _edit_or_send(ctx,cid,"⚠️ Upload រូបភាព!",IK_CANCEL); return S_PDF
     f=await ctx.bot.get_file(p.file_id if p else dc.file_id)
     ctx.user_data.setdefault("pdf_photos",[]).append(bytes(await f.download_as_bytearray()))
-    n=len(ctx.user_data["pdf_photos"])
-    prev_mid=ctx.user_data.get("pdf_mid")
+    n=len(ctx.user_data["pdf_photos"]); cid=u.message.chat_id
     txt=f"🖼️ <b>បានទទួល {n} រូប</b>\nUpload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>"
-    if prev_mid and n>1:
+    mid=ctx.user_data.get("mid")
+    if mid and n>1:
         try:
-            await ctx.bot.edit_message_text(chat_id=u.message.chat_id,message_id=prev_mid,text=txt,parse_mode=H)
+            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=ik_pdf(n),parse_mode=H)
             return S_PDF
         except: pass
-    msg=await u.message.reply_text(txt,reply_markup=KB_PDF_BUILD,parse_mode=H)
-    ctx.user_data["pdf_mid"]=msg.message_id; return S_PDF
+    msg=await u.message.reply_text(txt,reply_markup=ik_pdf(n),parse_mode=H)
+    _save(ctx,msg); return S_PDF
 
-async def _pdf_build(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
     photos=ctx.user_data.get("pdf_photos",[])
     if not photos:
-        await u.message.reply_text("⚠️ មិនទាន់មានរូបភាព!",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF
-    await u.message.reply_text(f"⏳ <b>កំពុងបំប្លែង {len(photos)} រូប → PDF...</b>",reply_markup=REM,parse_mode=H)
+        await q.edit_message_text("⚠️ មិនទាន់មានរូបភាព!",reply_markup=IK_CANCEL,parse_mode=H); return S_PDF
+    await q.edit_message_text(f"⏳ <b>កំពុងបំប្លែង {len(photos)} រូប → PDF...</b>",parse_mode=H)
     pdf=FPDF()
     for raw in photos:
         img=Image.open(io.BytesIO(raw)).convert("RGB"); w,h=img.size
@@ -155,19 +165,17 @@ async def _pdf_build(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         tmp=io.BytesIO(); img.save(tmp,format="JPEG",quality=95); tmp.seek(0)
         pdf.image(tmp,x=0,y=0,w=pw,h=ph)
     buf=io.BytesIO(bytes(pdf.output()))
-    await u.message.reply_document(document=InputFile(buf,filename="KhmerBot.pdf"),caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ {len(photos)} ទំព័រ",reply_markup=KB_PDF_DONE,parse_mode=H)
-    ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("pdf_mid",None); return S_DOC
+    await ctx.bot.send_document(chat_id=q.message.chat_id,document=InputFile(buf,filename="KhmerBot.pdf"),
+        caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ {len(photos)} ទំព័រ",reply_markup=IK_PDF_DONE,parse_mode=H)
+    ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("mid",None); return S_DOC
 
-async def pdf2img_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text or ""; fmt=ctx.user_data.get("pdf2img_fmt","PNG")
-    if t:
-        if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_doc(u,ctx)
-        await u.message.reply_text("📎 Upload PDF!",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF2IMG
-    dc=u.message.document
-    if not dc or not (dc.file_name or "").lower().endswith(".pdf"):
-        await u.message.reply_text("⚠️ Upload ឯកសារ PDF!",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF2IMG
+# ── PDF → image ───────────────────────────────────────────────────────────────
+async def pdf2img(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    dc=u.message.document; fmt=ctx.user_data.get("pdf2img_fmt","PNG"); cid=u.message.chat_id
+    if not dc or not (dc.mime_type=="application/pdf" or (dc.file_name or "").lower().endswith(".pdf")):
+        await _edit_or_send(ctx,cid,"⚠️ Upload ឯកសារ <b>PDF</b>!",IK_CANCEL); return S_PDF2IMG
     try:
-        await u.message.reply_text(f"⏳ <b>កំពុងបំប្លែង PDF → {fmt}...</b>",reply_markup=REM,parse_mode=H)
+        await _edit_or_send(ctx,cid,f"⏳ <b>កំពុងបំប្លែង PDF → {fmt}...</b>")
         raw=bytes(await (await ctx.bot.get_file(dc.file_id)).download_as_bytearray())
         doc=fitz.open(stream=raw,filetype="pdf"); total=len(doc)
         ext=fmt.lower(); pil_fmt="PNG" if fmt=="PNG" else "JPEG"; media=[]
@@ -177,133 +185,98 @@ async def pdf2img_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             buf=io.BytesIO(); img.save(buf,format=pil_fmt,quality=90 if fmt=="JPG" else None); buf.seek(0)
             media.append((buf,f"page_{i+1:02d}.{ext}"))
         doc.close()
-        done_kb=kb_img_done(fmt)
+        done_kb=ik_img_done(fmt)
         for idx,(buf,name) in enumerate(media):
             last=idx==len(media)-1
             cap=f"✅ <b>{'បំប្លែងជោគជ័យ! 1 ទំព័រ' if total==1 else f'ទំព័រ {idx+1}/{total}' if not last else f'រួចរាល់! {total} ទំព័រ → {fmt}'}</b>"
             await u.message.reply_document(document=InputFile(buf,filename=name),caption=cap,reply_markup=done_kb if last else None,parse_mode=H)
     except Exception as e:
         logger.error(f"pdf2img: {e}")
-        await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
+        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
     return S_DOC
 
-async def qr_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text
-    if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_main(u,ctx)
-    if t in("🔳 បង្កើត QR","🔳 QR ថ្មី"):
-        await u.message.reply_text("🔳 <b>បង្កើត QR Code</b>\n\n✏️ វាយ <b>Link / Text</b> ដែលចង់បំប្លែង:",reply_markup=KB_CANCEL,parse_mode=H)
-        return S_QR_CREATE
-    if t in("🔍 Scan QR","🔍 Scan ថ្មី"):
-        await u.message.reply_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=KB_CANCEL,parse_mode=H)
-        return S_QR_SCAN
-    return await go_qr(u,ctx)
-
-async def qr_create_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text
-    if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_main(u,ctx)
-    if t in("🔍 Scan QR","🔍 Scan ថ្មី"):
-        await u.message.reply_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=KB_CANCEL,parse_mode=H)
-        return S_QR_SCAN
+# ── QR create ─────────────────────────────────────────────────────────────────
+async def qr_create(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    t=u.message.text; cid=u.message.chat_id
     def _make_qr_buf(chunk):
-        ec_levels=[qrcode.constants.ERROR_CORRECT_H,qrcode.constants.ERROR_CORRECT_Q,qrcode.constants.ERROR_CORRECT_M,qrcode.constants.ERROR_CORRECT_L]
-        ec_names =["H","Q","M","L"]
-        for ec,name in zip(ec_levels,ec_names):
+        for ec,nm in zip([qrcode.constants.ERROR_CORRECT_H,qrcode.constants.ERROR_CORRECT_Q,qrcode.constants.ERROR_CORRECT_M,qrcode.constants.ERROR_CORRECT_L],["H","Q","M","L"]):
             try:
                 qr=qrcode.QRCode(version=None,error_correction=ec,box_size=40,border=1)
                 qr.add_data(chunk); qr.make(fit=True)
                 img=qr.make_image(fill_color="#000000",back_color="#FFFFFF").convert("L")
                 bbox=img.getbbox()
                 if bbox: img=img.crop(bbox)
-                pad=20
-                canvas=Image.new("L",(img.width+pad*2,img.height+pad*2),255)
-                canvas.paste(img,(pad,pad))
-                canvas=canvas.convert("RGB").resize((2048,2048),Image.NEAREST)
-                buf=io.BytesIO(); canvas.save(buf,format="PNG",optimize=False,compress_level=1); buf.seek(0)
-                return buf,name
+                pad=20; cv=Image.new("L",(img.width+pad*2,img.height+pad*2),255); cv.paste(img,(pad,pad))
+                cv=cv.convert("RGB").resize((2048,2048),Image.NEAREST)
+                buf=io.BytesIO(); cv.save(buf,format="PNG",optimize=False,compress_level=1); buf.seek(0)
+                return buf,nm
             except Exception: pass
         return None,None
     try:
-        CHUNK=2800
-        raw=t.encode("utf-8")
+        CHUNK=2800; raw=t.encode("utf-8")
         chunks=[raw[i:i+CHUNK].decode("utf-8","ignore") for i in range(0,len(raw),CHUNK)]
         total=len(chunks)
-        await u.message.reply_text(f"⏳ <b>កំពុងបង្កើត {total} QR Code{'s' if total>1 else ''}...</b>",reply_markup=REM,parse_mode=H)
+        msg=await u.message.reply_text(f"⏳ <b>កំពុងបង្កើត {total} QR Code{'s' if total>1 else ''}...</b>",parse_mode=H)
+        _save(ctx,msg)
         for idx,chunk in enumerate(chunks):
             buf,ec=_make_qr_buf(chunk)
             if buf is None: raise ValueError(f"chunk {idx+1} fail")
             fname=f"QRCode_HD{'_p'+str(idx+1) if total>1 else ''}.png"
             part_info=f" ({idx+1}/{total})" if total>1 else ""
             last=idx==total-1
-            cap=f"✅ <b>QR Code HD{part_info}</b>\n📐 2048×2048 px  |  EC: {ec}\n\n📝 <code>{chunk[:80]}{'…' if len(chunk)>80 else ''}</code>"
-            await u.message.reply_document(document=InputFile(buf,filename=fname),caption=cap,reply_markup=KB_QR_CREATE_DONE if last else None,parse_mode=H)
+            cap=f"✅ <b>QR Code HD{part_info}</b>\n📐 2048×2048  |  EC: {ec}\n\n📝 <code>{chunk[:80]}{'…' if len(chunk)>80 else ''}</code>"
+            sent=await u.message.reply_document(document=InputFile(buf,filename=fname),caption=cap,reply_markup=IK_QR_CR_DONE if last else None,parse_mode=H)
+            if last: _save(ctx,sent)
     except Exception as e:
         logger.error(f"qr_create: {e}")
-        await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
+        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
     return S_QR
 
-async def qr_scan_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    t=u.message.text or ""
-    if t in("❌ បោះបង់","🏠 ម៉ឺនុយមេ"): return await go_main(u,ctx)
-    if t in("🔳 បង្កើត QR","🔳 QR ថ្មី"):
-        await u.message.reply_text("🔳 <b>បង្កើត QR Code</b>\n\n✏️ វាយ <b>Link / Text</b>:",reply_markup=KB_CANCEL,parse_mode=H)
-        return S_QR_CREATE
-    if t: await u.message.reply_text("📤 Upload <b>រូបភាព QR</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_SCAN
+# ── QR scan ───────────────────────────────────────────────────────────────────
+async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     p=u.message.photo[-1] if u.message.photo else None
     dc=u.message.document if u.message.document else None
+    cid=u.message.chat_id
     if not p and not dc:
-        await u.message.reply_text("⚠️ Upload <b>រូបភាព QR</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_SCAN
+        await _edit_or_send(ctx,cid,"⚠️ Upload <b>រូបភាព QR</b>!",IK_CANCEL); return S_QR_SCAN
     try:
         raw=bytes(await (await ctx.bot.get_file(p.file_id if p else dc.file_id)).download_as_bytearray())
-        img=Image.open(io.BytesIO(raw)).convert("RGB")
-        codes=pyzbar.decode(img)
+        img=Image.open(io.BytesIO(raw)).convert("RGB"); codes=pyzbar.decode(img)
         if not codes:
-            await u.message.reply_text("❌ <b>រកមិនឃើញ QR Code!</b>\nសូម Upload រូបភាពច្បាស់ជាង",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_SCAN
+            await _edit_or_send(ctx,cid,"❌ <b>រកមិនឃើញ QR Code!</b>\nសូម Upload រូបភាពច្បាស់ជាង",IK_CANCEL); return S_QR_SCAN
         lines="\n\n".join(f"📌 <b>លទ្ធផលទី {i+1}:</b>\n<code>{c.data.decode('utf-8','replace')}</code>" for i,c in enumerate(codes))
-        await u.message.reply_text(f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",reply_markup=KB_QR_SCAN_DONE,parse_mode=H)
+        msg=await u.message.reply_text(f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",reply_markup=IK_QR_SC_DONE,parse_mode=H)
+        _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_scan: {e}")
-        await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
+        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
     return S_QR
 
-async def _back_main(u,ctx):
-    await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=KB_MAIN,parse_mode=H)
-    return S_MAIN
-
-async def _catch_main(u,ctx): return await _back_main(u,ctx)
-async def _catch_doc(u,ctx): return await go_doc(u,ctx)
-async def _catch_style(u,ctx):
-    await u.message.reply_text("✏️ វាយ <b>អក្សរឡាតាំង</b>:",reply_markup=KB_CANCEL,parse_mode=H); return S_STYLE
-async def _catch_pdf(u,ctx):
-    n=len(ctx.user_data.get("pdf_photos",[]))
-    kb=kb_pdf(n) if n>0 else KB_CANCEL
-    await u.message.reply_text("📤 Upload <b>រូបភាព</b> (photo/file)!",reply_markup=kb,parse_mode=H); return S_PDF
-async def _catch_pdf2img(u,ctx):
-    await u.message.reply_text("📎 Upload <b>ឯកសារ PDF</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_PDF2IMG
-async def _catch_qr(u,ctx): return await go_qr(u,ctx)
-async def _catch_qr_create(u,ctx):
-    await u.message.reply_text("✏️ វាយ <b>Link / Text</b> ដើម្បីបង្កើត QR:",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_CREATE
-async def _catch_qr_scan(u,ctx):
-    await u.message.reply_text("📤 Upload <b>រូបភាព QR</b>!",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_SCAN
+# ── fallback ──────────────────────────────────────────────────────────────────
+async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    ctx.user_data.clear()
+    msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
+    _save(ctx,msg); return S_MAIN
 
 def main():
     app=Application.builder().token(BOT_TOKEN).connect_timeout(10).read_timeout(30).write_timeout(30).pool_timeout(10).build()
     TXT=filters.TEXT&~filters.COMMAND
     IMG=filters.PHOTO|filters.Document.IMAGE
     PDF_F=filters.Document.MimeType("application/pdf")|filters.Document.FileExtension("pdf")
-    ANY=filters.ALL
+    CBQ=CallbackQueryHandler(cb)
     app.add_handler(ConversationHandler(
-        entry_points=[CommandHandler("start",cmd_start),MessageHandler(ANY,cmd_start)],
+        entry_points=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
         states={
-            S_MAIN:      [MessageHandler(TXT,main_handler),          MessageHandler(ANY,_catch_main)],
-            S_DOC:       [MessageHandler(TXT,doc_handler),           MessageHandler(ANY,_catch_doc)],
-            S_STYLE:     [MessageHandler(TXT,style_handler),         MessageHandler(ANY,_catch_style)],
-            S_PDF:       [MessageHandler(TXT|IMG,pdf_handler),       MessageHandler(ANY,_catch_pdf)],
-            S_PDF2IMG:   [MessageHandler(TXT|PDF_F,pdf2img_handler), MessageHandler(ANY,_catch_pdf2img)],
-            S_QR:        [MessageHandler(TXT,qr_handler),            MessageHandler(ANY,_catch_qr)],
-            S_QR_CREATE: [MessageHandler(TXT,qr_create_handler),     MessageHandler(ANY,_catch_qr_create)],
-            S_QR_SCAN:   [MessageHandler(TXT|IMG,qr_scan_handler),   MessageHandler(ANY,_catch_qr_scan)],
+            S_MAIN:      [CBQ],
+            S_DOC:       [CBQ],
+            S_STYLE:     [MessageHandler(TXT,style_handler),    CBQ],
+            S_PDF:       [MessageHandler(IMG,pdf_photo),        CBQ],
+            S_PDF2IMG:   [MessageHandler(PDF_F,pdf2img),        CBQ],
+            S_QR:        [CBQ],
+            S_QR_CREATE: [MessageHandler(TXT,qr_create),       CBQ],
+            S_QR_SCAN:   [MessageHandler(IMG,qr_scan),         CBQ],
         },
-        fallbacks=[CommandHandler("start",cmd_start),MessageHandler(ANY,_back_main)],
+        fallbacks=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
         per_message=False,allow_reentry=False,
     ))
     logger.info("🤖 Bot កំពុង Start..."); app.run_polling(allowed_updates=Update.ALL_TYPES,poll_interval=1.0,drop_pending_updates=True)
