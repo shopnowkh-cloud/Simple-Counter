@@ -5,7 +5,7 @@ from PIL import Image; from fpdf import FPDF; import fitz
 import cv2; import numpy as np; import qrcode
 from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup as IKM,InputFile,CopyTextButton
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
-from telegram.constants import ParseMode; from telegram.warnings import PTBUserWarning
+from telegram.constants import ParseMode,KeyboardButtonStyle; from telegram.warnings import PTBUserWarning
 warnings.filterwarnings("ignore",category=PTBUserWarning)
 BOT_TOKEN=os.environ.get("BOT_TOKEN","")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណត់!")
@@ -19,15 +19,16 @@ def mkb(rows): return IKM(rows)
 IK_MAIN  = mkb([[IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="style"),IKB("🗂️ បំប្លែង PDF",callback_data="doc")],[IKB("📷 QR Code",callback_data="qr")]])
 IK_DOC   = mkb([[IKB("🖼️ រូបភាព → PDF",callback_data="photo_pdf")],[IKB("🖼️ PDF → PNG",callback_data="pdf_png"),IKB("📷 PDF → JPG",callback_data="pdf_jpg")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR    = mkb([[IKB("🔳 បង្កើត QR",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
-IK_CANCEL_MAIN = mkb([[IKB("🔴 បោះបង់",callback_data="cancel_main")]])
-IK_CANCEL_DOC  = mkb([[IKB("🔴 បោះបង់",callback_data="cancel_doc")]])
-IK_CANCEL_QR   = mkb([[IKB("🔴 បោះបង់",callback_data="cancel_qr")]])
+_RED=KeyboardButtonStyle.DANGER
+IK_CANCEL_MAIN = mkb([[IKB("❌ បោះបង់",callback_data="cancel_main",style=_RED)]])
+IK_CANCEL_DOC  = mkb([[IKB("❌ បោះបង់",callback_data="cancel_doc", style=_RED)]])
+IK_CANCEL_QR   = mkb([[IKB("❌ បោះបង់",callback_data="cancel_qr",  style=_RED)]])
 IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_CR_DONE  = mkb([[IKB("🔳 QR ថ្មី",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_SC_DONE  = mkb([[IKB("🔍 Scan ថ្មី",callback_data="qr_scan"),IKB("🔳 បង្កើត QR",callback_data="qr_create")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 def ik_pdf(n,name=None):
     lbl=f"✅ បង្កើត PDF ({n} រូប)" + (f' 📄 "{name}"' if name else "")
-    return mkb([[IKB(lbl,callback_data="pdf_build"),IKB("✏️ ប្តូរឈ្មោះ",callback_data="pdf_rename")],[IKB("🔴 បោះបង់",callback_data="doc")]])
+    return mkb([[IKB(lbl,callback_data="pdf_build"),IKB("✏️ ប្តូរឈ្មោះ",callback_data="pdf_rename")],[IKB("❌ បោះបង់",callback_data="doc",style=_RED)]])
 def ik_img_done(fmt): return mkb([[IKB(f"🔄 {'PNG' if fmt=='PNG' else 'JPG'} ថ្មី",callback_data="pdf_png" if fmt=="PNG" else "pdf_jpg"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -182,7 +183,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             f"━━━━━━━━━━━━━━━\n"
             f"វាយឈ្មោះថ្មីសម្រាប់ PDF ({n} រូប){cur}\n\n"
             f"<i>⚠️ មិនចាំបាច់ដាក់ .pdf — Bot នឹងបន្ថែមជូន</i>",
-            reply_markup=mkb([[IKB("🔴 បោះបង់",callback_data="cancel_rename")]]),parse_mode=H)
+            reply_markup=mkb([[IKB("❌ បោះបង់",callback_data="cancel_rename",style=_RED)]]),parse_mode=H)
         return S_PDF_RENAME
 
     if d=="cancel_rename":
