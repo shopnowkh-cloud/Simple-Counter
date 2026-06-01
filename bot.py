@@ -200,6 +200,8 @@ async def qr_create_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if t in("🔍 Scan QR","🔍 Scan ថ្មី"):
         await u.message.reply_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=KB_CANCEL,parse_mode=H)
         return S_QR_SCAN
+    if len(t.encode("utf-8"))>2953:
+        await u.message.reply_text(f"❌ <b>Text វែងពេក!</b> សូម​វាយ​ខ្លី​ជាង\n<i>(max ~2000 chars | បច្ចុប្បន្ន: {len(t)} chars)</i>",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_CREATE
     try:
         ec_levels=[qrcode.constants.ERROR_CORRECT_H,qrcode.constants.ERROR_CORRECT_Q,qrcode.constants.ERROR_CORRECT_M,qrcode.constants.ERROR_CORRECT_L]
         ec_names= ["H","Q","M","L"]
