@@ -200,24 +200,36 @@ async def qr_create_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if t in("🔍 Scan QR","🔍 Scan ថ្មី"):
         await u.message.reply_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=KB_CANCEL,parse_mode=H)
         return S_QR_SCAN
-    if len(t.encode("utf-8"))>2953:
-        await u.message.reply_text(f"❌ <b>Text វែងពេក!</b> សូម​វាយ​ខ្លី​ជាង\n<i>(max ~2000 chars | បច្ចុប្បន្ន: {len(t)} chars)</i>",reply_markup=KB_CANCEL,parse_mode=H); return S_QR_CREATE
-    try:
+    def _make_qr_buf(chunk):
         ec_levels=[qrcode.constants.ERROR_CORRECT_H,qrcode.constants.ERROR_CORRECT_Q,qrcode.constants.ERROR_CORRECT_M,qrcode.constants.ERROR_CORRECT_L]
-        ec_names= ["H","Q","M","L"]
-        qr_img=None; used_ec="H"
+        ec_names =["H","Q","M","L"]
         for ec,name in zip(ec_levels,ec_names):
             try:
                 qr=qrcode.QRCode(version=None,error_correction=ec,box_size=30,border=4)
-                qr.add_data(t); qr.make(fit=True); qr_img=qr.make_image(fill_color="#000000",back_color="#FFFFFF").convert("RGB"); used_ec=name; break
-            except Exception: qr.clear()
-        if qr_img is None: raise ValueError("Text វែងពេក!")
-        img=qr_img.resize((2048,2048),Image.NEAREST)
-        buf=io.BytesIO(); img.save(buf,format="PNG",optimize=False,compress_level=1); buf.seek(0)
-        await u.message.reply_document(document=InputFile(buf,filename="QRCode_HD.png"),caption=f"✅ <b>QR Code HD បង្កើតជោគជ័យ!</b>\n📐 2048×2048 px  |  EC: {used_ec}\n\n📝 <code>{t}</code>",reply_markup=KB_QR_CREATE_DONE,parse_mode=H)
+                qr.add_data(chunk); qr.make(fit=True)
+                img=qr.make_image(fill_color="#000000",back_color="#FFFFFF").convert("RGB")
+                img=img.resize((2048,2048),Image.NEAREST)
+                buf=io.BytesIO(); img.save(buf,format="PNG",optimize=False,compress_level=1); buf.seek(0)
+                return buf,name
+            except Exception: pass
+        return None,None
+    try:
+        CHUNK=2800
+        raw=t.encode("utf-8")
+        chunks=[raw[i:i+CHUNK].decode("utf-8","ignore") for i in range(0,len(raw),CHUNK)]
+        total=len(chunks)
+        await u.message.reply_text(f"⏳ <b>កំពុងបង្កើត {total} QR Code{'s' if total>1 else ''}...</b>",reply_markup=REM,parse_mode=H)
+        for idx,chunk in enumerate(chunks):
+            buf,ec=_make_qr_buf(chunk)
+            if buf is None: raise ValueError(f"chunk {idx+1} fail")
+            fname=f"QRCode_HD{'_p'+str(idx+1) if total>1 else ''}.png"
+            part_info=f" ({idx+1}/{total})" if total>1 else ""
+            last=idx==total-1
+            cap=f"✅ <b>QR Code HD{part_info}</b>\n📐 2048×2048 px  |  EC: {ec}\n\n📝 <code>{chunk[:80]}{'…' if len(chunk)>80 else ''}</code>"
+            await u.message.reply_document(document=InputFile(buf,filename=fname),caption=cap,reply_markup=KB_QR_CREATE_DONE if last else None,parse_mode=H)
     except Exception as e:
         logger.error(f"qr_create: {e}")
-        await u.message.reply_text("❌ <b>Text វែងពេក! សូម​វាយ​ខ្លី​ជាង</b> (max ~2000 chars)",reply_markup=KB_CANCEL,parse_mode=H)
+        await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
     return S_QR
 
 async def qr_scan_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
