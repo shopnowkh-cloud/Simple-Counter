@@ -341,7 +341,14 @@ async def qr_create(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             await u.message.reply_document(document=InputFile(buf,filename=fname))
         try: await loading_msg.delete()
         except: pass
-        msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_QR_CR_DONE,parse_mode=H)
+        mid=ctx.user_data.get("mid")
+        if mid:
+            try: await ctx.bot.delete_message(chat_id=cid,message_id=mid)
+            except: pass
+            ctx.user_data.pop("mid",None)
+        try: await u.message.delete()
+        except: pass
+        msg=await ctx.bot.send_message(chat_id=cid,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_QR_CR_DONE,parse_mode=H)
         _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_create: {e}")
