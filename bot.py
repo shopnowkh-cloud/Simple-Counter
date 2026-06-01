@@ -3,7 +3,7 @@
 import os,io,logging,warnings
 from PIL import Image; from fpdf import FPDF; import fitz
 import qrcode; from pyzbar import pyzbar
-from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup as IKM,InputFile
+from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup as IKM,InputFile,CopyTextButton
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode; from telegram.warnings import PTBUserWarning
 warnings.filterwarnings("ignore",category=PTBUserWarning)
@@ -20,7 +20,6 @@ IK_MAIN  = mkb([[IKB("✍️ រចនាប័ទ្មអក្សរ",callbac
 IK_DOC   = mkb([[IKB("🖼️ រូបភាព → PDF",callback_data="photo_pdf")],[IKB("🖼️ PDF → PNG",callback_data="pdf_png"),IKB("📷 PDF → JPG",callback_data="pdf_jpg")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR    = mkb([[IKB("🔳 បង្កើត QR",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_CANCEL= mkb([[IKB("❌ បោះបង់",callback_data="cancel")]])
-IK_STYLE = mkb([[IKB("✍️ ដំណើរការថ្មី",callback_data="style_new"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_CR_DONE  = mkb([[IKB("🔳 QR ថ្មី",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_SC_DONE  = mkb([[IKB("🔍 Scan ថ្មី",callback_data="qr_scan"),IKB("🔳 បង្កើត QR",callback_data="qr_create")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
@@ -127,10 +126,11 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 # ── text style ────────────────────────────────────────────────────────────────
 async def style_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     t=u.message.text
-    lines="\n".join(f"<b>{lbl}:</b>  <code>{fn(t)}</code>" for lbl,fn in TS)
+    rows=[[IKB(f"{lbl}:  {fn(t)}",copy_text=CopyTextButton(fn(t)))] for lbl,fn in TS]
+    rows.append([IKB("✍️ ដំណើរការថ្មី",callback_data="style_new"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")])
     msg=await u.message.reply_text(
-        f"✍️ <b>Style:</b> <code>{t}</code>\n━━━━━━━━━\n{lines}\n━━━━━━━━━\n👆 ចុចលើ code ដើម្បី Copy",
-        reply_markup=IK_STYLE,parse_mode=H)
+        f"✍️ <b>Style:</b> <code>{t}</code>\n👇 ចុច button ដើម្បី <b>Copy</b>",
+        reply_markup=IKM(rows),parse_mode=H)
     _save(ctx,msg); return S_STYLE
 
 # ── image → PDF ───────────────────────────────────────────────────────────────
