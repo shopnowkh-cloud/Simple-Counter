@@ -1,0 +1,9 @@
+python-telegram-bot>=22.7
+fpdf2>=2.8.7
+pillow>=12.2.0
+qrcode>=8.2
+pyzbar>=0.1.9
+opencv-python-headless>=4.13.0.92
+numpy>=2.4.6
+pymupdf>=1.27.0
+python-dateutil>=2.9.0.post0

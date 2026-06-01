@@ -409,7 +409,7 @@ async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
     _save(ctx,msg); return S_MAIN
 
-def main():
+def build_app():
     app=Application.builder().token(BOT_TOKEN).connect_timeout(10).read_timeout(30).write_timeout(30).pool_timeout(10).build()
     TXT=filters.TEXT&~filters.COMMAND
     IMG=filters.PHOTO|filters.Document.IMAGE
@@ -431,5 +431,9 @@ def main():
         fallbacks=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
         per_message=False,allow_reentry=False,
     ))
+    return app
+
+def main():
+    app=build_app()
     logger.info("🤖 Bot កំពុង Start..."); app.run_polling(allowed_updates=Update.ALL_TYPES,poll_interval=1.0,drop_pending_updates=True)
 if __name__=="__main__": main()
