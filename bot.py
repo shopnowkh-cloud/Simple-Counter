@@ -11,7 +11,7 @@ BOT_TOKEN=os.environ.get("BOT_TOKEN","")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណត់!")
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
-S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN=range(8)
+S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN,S_PDF_RENAME=range(9)
 H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── inline keyboards ──────────────────────────────────────────────────────────
@@ -25,7 +25,9 @@ IK_CANCEL_QR   = mkb([[IKB("❌ បោះបង់",callback_data="cancel_qr")]]
 IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_CR_DONE  = mkb([[IKB("🔳 QR ថ្មី",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_SC_DONE  = mkb([[IKB("🔍 Scan ថ្មី",callback_data="qr_scan"),IKB("🔳 បង្កើត QR",callback_data="qr_create")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
-def ik_pdf(n): return mkb([[IKB(f"✅ បង្កើត PDF ({n} រូប)",callback_data="pdf_build"),IKB("❌ បោះបង់",callback_data="doc")]])
+def ik_pdf(n,name=None):
+    lbl=f"✅ បង្កើត PDF ({n} រូប)" + (f' 📄 "{name}"' if name else "")
+    return mkb([[IKB(lbl,callback_data="pdf_build"),IKB("✏️ ប្តូរឈ្មោះ",callback_data="pdf_rename")],[IKB("❌ បោះបង់",callback_data="doc")]])
 def ik_img_done(fmt): return mkb([[IKB(f"🔄 {'PNG' if fmt=='PNG' else 'JPG'} ថ្មី",callback_data="pdf_png" if fmt=="PNG" else "pdf_jpg"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 
 # ── helpers ───────────────────────────────────────────────────────────────────
@@ -128,7 +130,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
     if d=="doc" or d=="cancel_doc":
-        ctx.user_data.pop("pdf_photos",None); ctx.user_data.pop("pdf_mid",None)
+        ctx.user_data.pop("pdf_photos",None); ctx.user_data.pop("pdf_mid",None); ctx.user_data.pop("pdf_name",None)
         await q.edit_message_text(
             "🗂️ <b>បំប្លែង PDF</b>\n"
             "━━━━━━━━━━━━━━━\n"
@@ -170,6 +172,25 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 
     if d=="pdf_build":
         return await _pdf_build(q,ctx)
+
+    if d=="pdf_rename":
+        n=len(ctx.user_data.get("pdf_photos",[]))
+        name=ctx.user_data.get("pdf_name","")
+        cur=f"\n📄 ឈ្មោះបច្ចុប្បន្ន: <b>{name}</b>" if name else ""
+        await q.edit_message_text(
+            f"✏️ <b>ប្តូរឈ្មោះ PDF</b>\n"
+            f"━━━━━━━━━━━━━━━\n"
+            f"វាយឈ្មោះថ្មីសម្រាប់ PDF ({n} រូប){cur}\n\n"
+            f"<i>⚠️ មិនចាំបាច់ដាក់ .pdf — Bot នឹងបន្ថែមជូន</i>",
+            reply_markup=mkb([[IKB("❌ បោះបង់",callback_data="cancel_rename")]]),parse_mode=H)
+        return S_PDF_RENAME
+
+    if d=="cancel_rename":
+        n=len(ctx.user_data.get("pdf_photos",[]))
+        name=ctx.user_data.get("pdf_name",None)
+        txt=f"🖼️ <b>បានទទួល {n} រូប</b>\nUpload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>"
+        await q.edit_message_text(txt,reply_markup=ik_pdf(n,name),parse_mode=H)
+        return S_PDF
 
     if d=="qr":
         await q.edit_message_text(
@@ -227,14 +248,15 @@ async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     f=await ctx.bot.get_file(p.file_id if p else dc.file_id)
     ctx.user_data.setdefault("pdf_photos",[]).append(bytes(await f.download_as_bytearray()))
     n=len(ctx.user_data["pdf_photos"]); cid=u.message.chat_id
+    name=ctx.user_data.get("pdf_name",None)
     txt=f"🖼️ <b>បានទទួល {n} រូប</b>\nUpload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>"
     mid=ctx.user_data.get("mid")
     if mid and n>1:
         try:
-            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=ik_pdf(n),parse_mode=H)
+            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=ik_pdf(n,name),parse_mode=H)
             return S_PDF
         except: pass
-    msg=await u.message.reply_text(txt,reply_markup=ik_pdf(n),parse_mode=H)
+    msg=await u.message.reply_text(txt,reply_markup=ik_pdf(n,name),parse_mode=H)
     _save(ctx,msg); return S_PDF
 
 async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
@@ -250,10 +272,13 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
         tmp=io.BytesIO(); img.save(tmp,format="JPEG",quality=95); tmp.seek(0)
         pdf.image(tmp,x=0,y=0,w=pw,h=ph)
     buf=io.BytesIO(bytes(pdf.output()))
-    await ctx.bot.send_document(chat_id=q.message.chat_id,document=InputFile(buf,filename="KhmerBot.pdf"),
-        caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n🖼️ {len(photos)} ទំព័រ",parse_mode=H)
-    msg=await ctx.bot.send_message(chat_id=q.message.chat_id,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
-    ctx.user_data["pdf_photos"]=[]; _save(ctx,msg); return S_MAIN
+    raw_name=ctx.user_data.get("pdf_name","") or "KhmerBot"
+    safe_name=raw_name.strip().rstrip(".").replace("/","_") or "KhmerBot"
+    fname=safe_name+".pdf"
+    await ctx.bot.send_document(chat_id=q.message.chat_id,document=InputFile(buf,filename=fname),
+        caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n📄 {fname}  |  🖼️ {len(photos)} ទំព័រ",parse_mode=H)
+    msg=await ctx.bot.send_message(chat_id=q.message.chat_id,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_PDF_DONE,parse_mode=H)
+    ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("pdf_name",None); _save(ctx,msg); return S_MAIN
 
 # ── PDF → image ───────────────────────────────────────────────────────────────
 async def pdf2img(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
@@ -340,6 +365,24 @@ async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL_QR)
     return S_MAIN
 
+# ── PDF rename ────────────────────────────────────────────────────────────────
+async def pdf_rename_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    name=u.message.text.strip()
+    ctx.user_data["pdf_name"]=name
+    n=len(ctx.user_data.get("pdf_photos",[]))
+    cid=u.message.chat_id
+    try: await u.message.delete()
+    except: pass
+    txt=f"🖼️ <b>បានទទួល {n} រូប</b>\nUpload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>"
+    mid=ctx.user_data.get("mid")
+    if mid:
+        try:
+            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=ik_pdf(n,name),parse_mode=H)
+            return S_PDF
+        except: pass
+    msg=await ctx.bot.send_message(chat_id=cid,text=txt,reply_markup=ik_pdf(n,name),parse_mode=H)
+    _save(ctx,msg); return S_PDF
+
 # ── fallback ──────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data.clear()
@@ -359,6 +402,7 @@ def main():
             S_DOC:       [CBQ],
             S_STYLE:     [MessageHandler(TXT,style_handler),    CBQ],
             S_PDF:       [MessageHandler(IMG,pdf_photo),        CBQ],
+            S_PDF_RENAME:[MessageHandler(TXT,pdf_rename_handler),CBQ],
             S_PDF2IMG:   [MessageHandler(PDF_F,pdf2img),        CBQ],
             S_QR:        [CBQ],
             S_QR_CREATE: [MessageHandler(TXT,qr_create),       CBQ],
