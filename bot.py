@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os,io,logging,warnings
 from PIL import Image; from fpdf import FPDF; import fitz
-import qrcode; from pyzbar import pyzbar
+import cv2; import numpy as np; import qrcode
 from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup as IKM,InputFile,CopyTextButton
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode; from telegram.warnings import PTBUserWarning
@@ -366,10 +366,14 @@ async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await _edit_or_send(ctx,cid,"⚠️ Upload <b>រូបភាព QR</b>!",IK_CANCEL_QR); return S_QR_SCAN
     try:
         raw=bytes(await (await ctx.bot.get_file(p.file_id if p else dc.file_id)).download_as_bytearray())
-        img=Image.open(io.BytesIO(raw)).convert("RGB"); codes=pyzbar.decode(img)
+        img=Image.open(io.BytesIO(raw)).convert("RGB")
+        img_np=cv2.cvtColor(np.array(img),cv2.COLOR_RGB2BGR)
+        detector=cv2.QRCodeDetector()
+        ok,decoded,_,_=detector.detectAndDecodeMulti(img_np)
+        codes=[d for d in (decoded or []) if d]
         if not codes:
             await _edit_or_send(ctx,cid,"❌ <b>រកមិនឃើញ QR Code!</b>\nសូម Upload រូបភាពច្បាស់ជាង",IK_CANCEL_QR); return S_QR_SCAN
-        lines="\n\n".join(f"📌 <b>លទ្ធផលទី {i+1}:</b>\n<code>{c.data.decode('utf-8','replace')}</code>" for i,c in enumerate(codes))
+        lines="\n\n".join(f"📌 <b>លទ្ធផលទី {i+1}:</b>\n<code>{d}</code>" for i,d in enumerate(codes))
         mid=ctx.user_data.get("mid")
         if mid:
             try: await ctx.bot.delete_message(chat_id=cid,message_id=mid)
