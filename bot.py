@@ -128,9 +128,14 @@ async def style_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     t=u.message.text
     rows=[[IKB(f"{lbl}:  {fn(t)}",copy_text=CopyTextButton(fn(t)))] for lbl,fn in TS]
     rows.append([IKB("✍️ ដំណើរការថ្មី",callback_data="style_new"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")])
-    msg=await u.message.reply_text(
-        f"✍️ <b>Style:</b> <code>{t}</code>\n👇 ចុច button ដើម្បី <b>Copy</b>",
-        reply_markup=IKM(rows),parse_mode=H)
+    kb=IKM(rows); txt=f"✍️ <b>Style:</b> <code>{t}</code>\n👇 ចុច button ដើម្បី <b>Copy</b>"
+    cid=u.message.chat_id; mid=ctx.user_data.get("mid")
+    if mid:
+        try:
+            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=kb,parse_mode=H)
+            return S_STYLE
+        except: pass
+    msg=await u.message.reply_text(txt,reply_markup=kb,parse_mode=H)
     _save(ctx,msg); return S_STYLE
 
 # ── image → PDF ───────────────────────────────────────────────────────────────
