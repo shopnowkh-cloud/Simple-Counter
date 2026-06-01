@@ -309,8 +309,7 @@ async def qr_create(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             if buf is None: raise ValueError(f"chunk {idx+1} fail")
             fname=f"QRCode_HD{'_p'+str(idx+1) if total>1 else ''}.png"
             part_info=f" ({idx+1}/{total})" if total>1 else ""
-            cap=f"✅ <b>QR Code HD{part_info}</b>\n📐 2048×2048  |  EC: {ec}\n\n📝 <code>{chunk[:80]}{'…' if len(chunk)>80 else ''}</code>"
-            await u.message.reply_document(document=InputFile(buf,filename=fname),caption=cap,parse_mode=H)
+            await u.message.reply_document(document=InputFile(buf,filename=fname))
         try: await loading_msg.delete()
         except: pass
         msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_QR_CR_DONE,parse_mode=H)
