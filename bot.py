@@ -201,11 +201,13 @@ async def qr_create_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await u.message.reply_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=KB_CANCEL,parse_mode=H)
         return S_QR_SCAN
     try:
-        qr=qrcode.QRCode(version=None,error_correction=qrcode.constants.ERROR_CORRECT_H,box_size=10,border=4)
+        qr=qrcode.QRCode(version=None,error_correction=qrcode.constants.ERROR_CORRECT_H,box_size=30,border=4)
         qr.add_data(t); qr.make(fit=True)
-        img=qr.make_image(fill_color="black",back_color="white").convert("RGB")
-        buf=io.BytesIO(); img.save(buf,format="PNG"); buf.seek(0)
-        await u.message.reply_photo(photo=buf,caption=f"✅ <b>QR Code បង្កើតជោគជ័យ!</b>\n\n📝 <code>{t}</code>",reply_markup=KB_QR_CREATE_DONE,parse_mode=H)
+        img=qr.make_image(fill_color="#000000",back_color="#FFFFFF").convert("RGB")
+        size=max(img.size); target=2048
+        img=img.resize((target,target),Image.NEAREST)
+        buf=io.BytesIO(); img.save(buf,format="PNG",optimize=False,compress_level=1); buf.seek(0)
+        await u.message.reply_document(document=InputFile(buf,filename="QRCode_HD.png"),caption=f"✅ <b>QR Code HD បង្កើតជោគជ័យ!</b>\n📐 2048×2048 px\n\n📝 <code>{t}</code>",reply_markup=KB_QR_CREATE_DONE,parse_mode=H)
     except Exception as e:
         logger.error(f"qr_create: {e}")
         await u.message.reply_text("❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",reply_markup=KB_CANCEL,parse_mode=H)
