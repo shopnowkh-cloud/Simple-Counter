@@ -205,11 +205,16 @@ async def qr_create_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         ec_names =["H","Q","M","L"]
         for ec,name in zip(ec_levels,ec_names):
             try:
-                qr=qrcode.QRCode(version=None,error_correction=ec,box_size=30,border=4)
+                qr=qrcode.QRCode(version=None,error_correction=ec,box_size=40,border=1)
                 qr.add_data(chunk); qr.make(fit=True)
-                img=qr.make_image(fill_color="#000000",back_color="#FFFFFF").convert("RGB")
-                img=img.resize((2048,2048),Image.NEAREST)
-                buf=io.BytesIO(); img.save(buf,format="PNG",optimize=False,compress_level=1); buf.seek(0)
+                img=qr.make_image(fill_color="#000000",back_color="#FFFFFF").convert("L")
+                bbox=img.getbbox()
+                if bbox: img=img.crop(bbox)
+                pad=20
+                canvas=Image.new("L",(img.width+pad*2,img.height+pad*2),255)
+                canvas.paste(img,(pad,pad))
+                canvas=canvas.convert("RGB").resize((2048,2048),Image.NEAREST)
+                buf=io.BytesIO(); canvas.save(buf,format="PNG",optimize=False,compress_level=1); buf.seek(0)
                 return buf,name
             except Exception: pass
         return None,None
