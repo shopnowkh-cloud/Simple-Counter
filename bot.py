@@ -19,7 +19,9 @@ def mkb(rows): return IKM(rows)
 IK_MAIN  = mkb([[IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="style"),IKB("🗂️ បំប្លែង PDF",callback_data="doc")],[IKB("📷 QR Code",callback_data="qr")]])
 IK_DOC   = mkb([[IKB("🖼️ រូបភាព → PDF",callback_data="photo_pdf")],[IKB("🖼️ PDF → PNG",callback_data="pdf_png"),IKB("📷 PDF → JPG",callback_data="pdf_jpg")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR    = mkb([[IKB("🔳 បង្កើត QR",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
-IK_CANCEL= mkb([[IKB("❌ បោះបង់",callback_data="cancel")]])
+IK_CANCEL_MAIN = mkb([[IKB("❌ បោះបង់",callback_data="cancel_main")]])
+IK_CANCEL_DOC  = mkb([[IKB("❌ បោះបង់",callback_data="cancel_doc")]])
+IK_CANCEL_QR   = mkb([[IKB("❌ បោះបង់",callback_data="cancel_qr")]])
 IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_CR_DONE  = mkb([[IKB("🔳 QR ថ្មី",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_SC_DONE  = mkb([[IKB("🔍 Scan ថ្មី",callback_data="qr_scan"),IKB("🔳 បង្កើត QR",callback_data="qr_create")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
@@ -94,20 +96,27 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
     if d=="style" or d=="style_new":
-        await q.edit_message_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ វាយ <b>អក្សរឡាតាំង</b>:\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=IK_CANCEL,parse_mode=H); return S_STYLE
+        await q.edit_message_text("✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n✏️ វាយ <b>អក្សរឡាតាំង</b>:\n<i>⚠️ ដំណើរការល្អជាមួយ a-z A-Z 0-9</i>",reply_markup=IK_CANCEL_MAIN,parse_mode=H); return S_STYLE
 
-    if d=="doc" or d=="cancel":
+    if d=="cancel_main":
+        ctx.user_data.clear(); _save(ctx,q.message)
+        await q.edit_message_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
+
+    if d=="doc" or d=="cancel_doc":
         ctx.user_data.pop("pdf_photos",None); ctx.user_data.pop("pdf_mid",None)
         await q.edit_message_text("🗂️ <b>បំប្លែង PDF</b>\nជ្រើស:",reply_markup=IK_DOC,parse_mode=H); return S_DOC
 
+    if d=="cancel_qr":
+        await q.edit_message_text("📷 <b>QR Code</b>\nជ្រើស:",reply_markup=IK_QR,parse_mode=H); return S_QR
+
     if d=="photo_pdf":
         ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("pdf_mid",None)
-        await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n📤 Upload រូបភាព:",reply_markup=IK_CANCEL,parse_mode=H); return S_PDF
+        await q.edit_message_text("🖼️ <b>រូបភាព → PDF</b>\n📤 Upload រូបភាព:",reply_markup=IK_CANCEL_DOC,parse_mode=H); return S_PDF
 
     if d in("pdf_png","pdf_jpg"):
         ctx.user_data["pdf2img_fmt"]="PNG" if d=="pdf_png" else "JPG"
         lbl="PNG" if d=="pdf_png" else "JPG"; ico="🖼️" if d=="pdf_png" else "📷"
-        await q.edit_message_text(f"{ico} <b>PDF → {lbl}</b>\n📎 Upload PDF:",reply_markup=IK_CANCEL,parse_mode=H); return S_PDF2IMG
+        await q.edit_message_text(f"{ico} <b>PDF → {lbl}</b>\n📎 Upload PDF:",reply_markup=IK_CANCEL_DOC,parse_mode=H); return S_PDF2IMG
 
     if d=="pdf_build":
         return await _pdf_build(q,ctx)
@@ -116,10 +125,10 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text("📷 <b>QR Code</b>\nជ្រើស:",reply_markup=IK_QR,parse_mode=H); return S_QR
 
     if d=="qr_create":
-        await q.edit_message_text("🔳 <b>បង្កើត QR Code</b>\n\n✏️ វាយ <b>Link / Text</b>:",reply_markup=IK_CANCEL,parse_mode=H); return S_QR_CREATE
+        await q.edit_message_text("🔳 <b>បង្កើត QR Code</b>\n\n✏️ វាយ <b>Link / Text</b>:",reply_markup=IK_CANCEL_QR,parse_mode=H); return S_QR_CREATE
 
     if d=="qr_scan":
-        await q.edit_message_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=IK_CANCEL,parse_mode=H); return S_QR_SCAN
+        await q.edit_message_text("🔍 <b>Scan QR Code</b>\n\n📤 Upload <b>រូបភាព QR</b>:",reply_markup=IK_CANCEL_QR,parse_mode=H); return S_QR_SCAN
 
     await q.edit_message_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
@@ -145,7 +154,7 @@ async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     p=u.message.photo[-1] if u.message.photo else None
     dc=u.message.document if u.message.document else None
     if not p and not dc:
-        cid=u.message.chat_id; await _edit_or_send(ctx,cid,"⚠️ Upload រូបភាព!",IK_CANCEL); return S_PDF
+        cid=u.message.chat_id; await _edit_or_send(ctx,cid,"⚠️ Upload រូបភាព!",IK_CANCEL_DOC); return S_PDF
     f=await ctx.bot.get_file(p.file_id if p else dc.file_id)
     ctx.user_data.setdefault("pdf_photos",[]).append(bytes(await f.download_as_bytearray()))
     n=len(ctx.user_data["pdf_photos"]); cid=u.message.chat_id
@@ -162,7 +171,7 @@ async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
     photos=ctx.user_data.get("pdf_photos",[])
     if not photos:
-        await q.edit_message_text("⚠️ មិនទាន់មានរូបភាព!",reply_markup=IK_CANCEL,parse_mode=H); return S_PDF
+        await q.edit_message_text("⚠️ មិនទាន់មានរូបភាព!",reply_markup=IK_CANCEL_DOC,parse_mode=H); return S_PDF
     await q.edit_message_text(f"⏳ <b>កំពុងបំប្លែង {len(photos)} រូប → PDF...</b>",parse_mode=H)
     pdf=FPDF()
     for raw in photos:
@@ -181,7 +190,7 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
 async def pdf2img(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     dc=u.message.document; fmt=ctx.user_data.get("pdf2img_fmt","PNG"); cid=u.message.chat_id
     if not dc or not (dc.mime_type=="application/pdf" or (dc.file_name or "").lower().endswith(".pdf")):
-        await _edit_or_send(ctx,cid,"⚠️ Upload ឯកសារ <b>PDF</b>!",IK_CANCEL); return S_PDF2IMG
+        await _edit_or_send(ctx,cid,"⚠️ Upload ឯកសារ <b>PDF</b>!",IK_CANCEL_DOC); return S_PDF2IMG
     try:
         await _edit_or_send(ctx,cid,f"⏳ <b>កំពុងបំប្លែង PDF → {fmt}...</b>")
         raw=bytes(await (await ctx.bot.get_file(dc.file_id)).download_as_bytearray())
@@ -201,7 +210,7 @@ async def pdf2img(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         _save(ctx,msg)
     except Exception as e:
         logger.error(f"pdf2img: {e}")
-        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
+        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL_DOC)
     return S_MAIN
 
 # ── QR create ─────────────────────────────────────────────────────────────────
@@ -239,7 +248,7 @@ async def qr_create(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_create: {e}")
-        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
+        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL_QR)
     return S_MAIN
 
 # ── QR scan ───────────────────────────────────────────────────────────────────
@@ -248,19 +257,19 @@ async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     dc=u.message.document if u.message.document else None
     cid=u.message.chat_id
     if not p and not dc:
-        await _edit_or_send(ctx,cid,"⚠️ Upload <b>រូបភាព QR</b>!",IK_CANCEL); return S_QR_SCAN
+        await _edit_or_send(ctx,cid,"⚠️ Upload <b>រូបភាព QR</b>!",IK_CANCEL_QR); return S_QR_SCAN
     try:
         raw=bytes(await (await ctx.bot.get_file(p.file_id if p else dc.file_id)).download_as_bytearray())
         img=Image.open(io.BytesIO(raw)).convert("RGB"); codes=pyzbar.decode(img)
         if not codes:
-            await _edit_or_send(ctx,cid,"❌ <b>រកមិនឃើញ QR Code!</b>\nសូម Upload រូបភាពច្បាស់ជាង",IK_CANCEL); return S_QR_SCAN
+            await _edit_or_send(ctx,cid,"❌ <b>រកមិនឃើញ QR Code!</b>\nសូម Upload រូបភាពច្បាស់ជាង",IK_CANCEL_QR); return S_QR_SCAN
         lines="\n\n".join(f"📌 <b>លទ្ធផលទី {i+1}:</b>\n<code>{c.data.decode('utf-8','replace')}</code>" for i,c in enumerate(codes))
         await u.message.reply_text(f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",parse_mode=H)
         msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
         _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_scan: {e}")
-        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL)
+        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL_QR)
     return S_MAIN
 
 # ── fallback ──────────────────────────────────────────────────────────────────
