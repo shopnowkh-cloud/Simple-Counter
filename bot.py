@@ -251,7 +251,11 @@ async def pdf_photo(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     name=ctx.user_data.get("pdf_name",None)
     txt=f"🖼️ <b>បានទទួល {n} រូប</b>\nUpload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>"
     mid=ctx.user_data.get("mid")
-    if mid and n>1:
+    if n==1 and mid:
+        try: await ctx.bot.delete_message(chat_id=cid,message_id=mid)
+        except: pass
+        ctx.user_data.pop("mid",None); mid=None
+    if mid:
         try:
             await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=ik_pdf(n,name),parse_mode=H)
             return S_PDF
