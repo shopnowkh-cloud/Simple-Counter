@@ -281,6 +281,8 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
     fname=safe_name+".pdf"
     await ctx.bot.send_document(chat_id=q.message.chat_id,document=InputFile(buf,filename=fname),
         caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n📄 {fname}  |  🖼️ {len(photos)} ទំព័រ",parse_mode=H)
+    try: await q.message.delete()
+    except: pass
     msg=await ctx.bot.send_message(chat_id=q.message.chat_id,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_PDF_DONE,parse_mode=H)
     ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("pdf_name",None); _save(ctx,msg); return S_MAIN
 
