@@ -370,8 +370,15 @@ async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         if not codes:
             await _edit_or_send(ctx,cid,"❌ <b>រកមិនឃើញ QR Code!</b>\nសូម Upload រូបភាពច្បាស់ជាង",IK_CANCEL_QR); return S_QR_SCAN
         lines="\n\n".join(f"📌 <b>លទ្ធផលទី {i+1}:</b>\n<code>{c.data.decode('utf-8','replace')}</code>" for i,c in enumerate(codes))
-        await u.message.reply_text(f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",parse_mode=H)
-        msg=await u.message.reply_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
+        mid=ctx.user_data.get("mid")
+        if mid:
+            try: await ctx.bot.delete_message(chat_id=cid,message_id=mid)
+            except: pass
+            ctx.user_data.pop("mid",None)
+        try: await u.message.delete()
+        except: pass
+        await ctx.bot.send_message(chat_id=cid,text=f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",parse_mode=H)
+        msg=await ctx.bot.send_message(chat_id=cid,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_QR_SC_DONE,parse_mode=H)
         _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_scan: {e}")
