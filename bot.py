@@ -24,6 +24,7 @@ KB_CANCEL = _rk(["❌ បោះបង់"])
 KB_STYLE  = _rk(["✍️ ដំណើរការថ្មី","🏠 ម៉ឺនុយមេ"])
 KB_PDF_DONE = _rk(["🖼️ PDF ថ្មី","🏠 ម៉ឺនុយមេ"])
 REM = ReplyKeyboardRemove()
+KB_PDF_BUILD = _rk(["✅ បង្កើត PDF","❌ បោះបង់"])
 def kb_pdf(n): return _rk([f"✅ បង្កើត PDF ({n} រូប)","❌ បោះបង់"])
 def kb_img_done(fmt): return _rk([f"🔄 {'PNG' if fmt=='PNG' else 'JPG'} ថ្មី","🏠 ម៉ឺនុយមេ"])
 
@@ -132,10 +133,13 @@ async def pdf_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data.setdefault("pdf_photos",[]).append(bytes(await f.download_as_bytearray()))
     n=len(ctx.user_data["pdf_photos"])
     prev_mid=ctx.user_data.get("pdf_mid")
+    txt=f"🖼️ <b>បានទទួល {n} រូប</b>\nUpload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>"
     if prev_mid and n>1:
-        try: await ctx.bot.delete_message(chat_id=u.message.chat_id,message_id=prev_mid)
+        try:
+            await ctx.bot.edit_message_text(chat_id=u.message.chat_id,message_id=prev_mid,text=txt,parse_mode=H)
+            return S_PDF
         except: pass
-    msg=await u.message.reply_text(f"🖼️ <b>បានទទួល {n} រូប</b>\nUpload បន្ថែម ឬ ចុច <b>បង្កើត PDF</b>",reply_markup=kb_pdf(n),parse_mode=H)
+    msg=await u.message.reply_text(txt,reply_markup=KB_PDF_BUILD,parse_mode=H)
     ctx.user_data["pdf_mid"]=msg.message_id; return S_PDF
 
 async def _pdf_build(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
