@@ -1,0 +1,13 @@
+.git
+.gitignore
+.replit
+.replitignore
+replit.nix
+replit.md
+.local/
+.agents/
+.cache/
+.pythonlibs/
+uv.lock
+package.json
+scripts/
