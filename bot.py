@@ -329,7 +329,7 @@ async def _pdf_build(q,ctx:ContextTypes.DEFAULT_TYPE):
         caption=f"✅ <b>PDF បង្កើតជោគជ័យ!</b>\n📄 {fname}  |  🖼️ {len(photos)} ទំព័រ",parse_mode=H)
     try: await q.message.delete()
     except: pass
-    msg=await ctx.bot.send_message(chat_id=q.message.chat_id,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_PDF_DONE,parse_mode=H)
+    msg=await ctx.bot.send_message(chat_id=q.message.chat_id,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
     ctx.user_data["pdf_photos"]=[]; ctx.user_data.pop("pdf_name",None); _save(ctx,msg); return S_MAIN
 
 # ── PDF → image ───────────────────────────────────────────────────────────────
@@ -396,7 +396,7 @@ async def qr_create(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             ctx.user_data.pop("mid",None)
         try: await u.message.delete()
         except: pass
-        msg=await ctx.bot.send_message(chat_id=cid,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_QR_CR_DONE,parse_mode=H)
+        msg=await ctx.bot.send_message(chat_id=cid,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
         _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_create: {e}")
@@ -429,7 +429,7 @@ async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         try: await u.message.delete()
         except: pass
         await ctx.bot.send_message(chat_id=cid,text=f"✅ <b>Scan QR ជោគជ័យ!</b> ({len(codes)} QR)\n━━━━━━━━━\n{lines}",parse_mode=H)
-        msg=await ctx.bot.send_message(chat_id=cid,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_QR_SC_DONE,parse_mode=H)
+        msg=await ctx.bot.send_message(chat_id=cid,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H)
         _save(ctx,msg)
     except Exception as e:
         logger.error(f"qr_scan: {e}")
