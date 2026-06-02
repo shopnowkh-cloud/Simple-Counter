@@ -479,11 +479,11 @@ def _fmt_price(usd:float|None,label:str,emoji:str,khr:float|None=None,chg:float|
     if usd is None:
         return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: N/A\nជី: N/A\nអោន: N/A"
     dom=usd*(_DOM/_OZ); chi=usd*(_CHI/_OZ)
-    def _d(v): return f"${round(v):,}"
+    def _d(v): return f"${v:,.2f}"
     if chg is not None and pct is not None:
         arrow="▲" if chg>=0 else "▼"
         sign="+" if chg>=0 else ""
-        chg_line=f"\n  ការផ្លាស់ប្តូរ: <b>{arrow} {sign}{round(chg):,} ({sign}{pct:.2f}%)</b>"
+        chg_line=f"\n  ការផ្លាស់ប្តូរ: <b>{arrow} {sign}{chg:,.2f} ({sign}{pct:.2f}%)</b>"
     else:
         chg_line=""
     return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
