@@ -6,3 +6,15 @@ opencv-python-headless>=4.13.0.92
 numpy>=2.4.6
 pymupdf>=1.27.0
 python-dateutil>=2.9.0.post0
+fitz
+fpdf
+fpdf2
+httpx
+numpy
+opencv-python-headless
+pillow
+pymupdf
+python-dateutil
+python-telegram-bot
+qrcode
+telegram
