@@ -18,3 +18,5 @@ python-dateutil
 python-telegram-bot
 qrcode
 telegram
+onnxruntime
+rembg

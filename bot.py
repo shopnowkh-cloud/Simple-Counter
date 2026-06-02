@@ -3,6 +3,7 @@
 import os,io,logging,warnings
 from PIL import Image; from fpdf import FPDF; import fitz
 import qrcode
+from rembg import remove as rembg_remove
 from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup as IKM,InputFile,CopyTextButton
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode,KeyboardButtonStyle; from telegram.warnings import PTBUserWarning
@@ -11,17 +12,18 @@ BOT_TOKEN=os.environ.get("BOT_TOKEN","")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណត់!")
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
-S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN,S_PDF_RENAME,S_GOLD=range(10)
+S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN,S_PDF_RENAME,S_GOLD,S_RMBG=range(11)
 H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── inline keyboards ──────────────────────────────────────────────────────────
 def mkb(rows): return IKM(rows)
-IK_MAIN  = mkb([[IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="style"),IKB("🗂️ បំប្លែង PDF",callback_data="doc")],[IKB("📷 QR Code",callback_data="qr"),IKB("🥇 ហាងឆេងមាស",callback_data="gold")],[IKB("🎙️ បង្កើតសំឡេង Ai",url="https://t.me/limsovannradybot?start=start",style=KeyboardButtonStyle.PRIMARY)]])
+IK_MAIN  = mkb([[IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="style"),IKB("🗂️ បំប្លែង PDF",callback_data="doc")],[IKB("📷 QR Code",callback_data="qr"),IKB("🥇 ហាងឆេងមាស",callback_data="gold")],[IKB("🪄 លុប Background រូបភាព",callback_data="rmbg",style=KeyboardButtonStyle.PRIMARY)],[IKB("🎙️ បង្កើតសំឡេង Ai",url="https://t.me/limsovannradybot?start=start",style=KeyboardButtonStyle.PRIMARY)]])
 IK_DOC   = mkb([[IKB("🖼️ រូបភាព → PDF",callback_data="photo_pdf")],[IKB("🖼️ PDF → PNG",callback_data="pdf_png"),IKB("📷 PDF → JPG",callback_data="pdf_jpg")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR    = mkb([[IKB("🔳 បង្កើត QR",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 _RED=KeyboardButtonStyle.DANGER
 _GREEN=KeyboardButtonStyle.SUCCESS
 IK_CANCEL_MAIN = mkb([[IKB("❌ បោះបង់",callback_data="cancel_main",style=_RED)]])
+IK_CANCEL_RMBG = mkb([[IKB("❌ បោះបង់",callback_data="cancel_main",style=_RED)]])
 IK_CANCEL_DOC  = mkb([[IKB("❌ បោះបង់",callback_data="cancel_doc", style=_RED)]])
 IK_CANCEL_QR   = mkb([[IKB("❌ បោះបង់",callback_data="cancel_qr",  style=_RED)]])
 IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf",style=_GREEN),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
@@ -117,7 +119,8 @@ async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         "✍️  រចនាប័ទ្មអក្សរ\n"
         "🗂️  បំប្លែង PDF\n"
         "📷  QR Code\n"
-        "🥇  ហាងឆេងមាស",
+        "🥇  ហាងឆេងមាស\n"
+        "🪄  លុប Background រូបភាព",
         reply_markup=IK_MAIN,parse_mode=H)
     _save(ctx,msg); return S_MAIN
 
@@ -134,7 +137,8 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "✍️  រចនាប័ទ្មអក្សរ\n"
             "🗂️  បំប្លែង PDF\n"
             "📷  QR Code\n"
-            "🥇  ហាងឆេងមាស",
+            "🥇  ហាងឆេងមាស\n"
+            "🪄  លុប Background រូបភាព",
             reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
     if d=="style" or d=="style_new":
@@ -153,7 +157,8 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "✍️  រចនាប័ទ្មអក្សរ\n"
             "🗂️  បំប្លែង PDF\n"
             "📷  QR Code\n"
-            "🥇  ហាងឆេងមាស",
+            "🥇  ហាងឆេងមាស\n"
+            "🪄  លុប Background រូបភាព",
             reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
     if d=="doc" or d=="cancel_doc":
@@ -238,6 +243,14 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "Bot នឹង Decode យក <b>Link</b> ឬ <b>Text</b> ឱ្យអ្នក\n\n"
             "📤 <b>Upload រូបភាព QR:</b>",
             reply_markup=IK_CANCEL_QR,parse_mode=H); return S_QR_SCAN
+    if d=="rmbg":
+        await q.edit_message_text(
+            "🪄 <b>លុប Background រូបភាព</b>\n\n"
+            "Upload រូបភាព Bot នឹងលុប Background ចេញ\n"
+            "លទ្ធផលជា PNG មាន Background ថ្លា\n\n"
+            "📤 <b>Upload រូបភាព:</b>",
+            reply_markup=IK_CANCEL_RMBG,parse_mode=H); return S_RMBG
+
     if d in("gold","cancel_gold","gold_live"):
         await q.edit_message_text("⏳ <b>កំពុងទាញយកទិន្ន័យ...</b>",parse_mode=H)
         spots=await _fetch_all_spots()
@@ -471,6 +484,32 @@ def _fmt_price(usd:float|None,label:str,emoji:str,khr:float|None=None,chg:float|
             f"  ជី        : <b>{_d(chi)}</b>\n"
             f"  អោន    : <b>{_d(usd)}</b>")
 
+# ── remove background ─────────────────────────────────────────────────────────
+async def rmbg_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
+    cid=u.message.chat_id
+    p=u.message.photo[-1] if u.message.photo else None
+    dc=u.message.document if u.message.document else None
+    try:
+        await _edit_or_send(ctx,cid,"⏳ <b>កំពុងដំណើរការ...</b>",None)
+        raw=bytes(await (await ctx.bot.get_file(p.file_id if p else dc.file_id)).download_as_bytearray())
+        out=rembg_remove(raw)
+        buf=io.BytesIO(out); buf.name="result.png"
+        try: await u.message.delete()
+        except: pass
+        mid=ctx.user_data.get("mid")
+        if mid:
+            try: await ctx.bot.delete_message(chat_id=cid,message_id=mid)
+            except: pass
+        IK_RMBG_DONE=mkb([[IKB("🪄 លុប Background ថ្មី",callback_data="rmbg",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+        await ctx.bot.send_document(chat_id=cid,document=InputFile(buf,filename="no_background.png"),
+            caption="✅ <b>លុប Background រួចហើយ!</b>\nរូបភាពជា PNG Background ថ្លា",
+            reply_markup=IK_RMBG_DONE,parse_mode=H)
+        ctx.user_data.pop("mid",None)
+    except Exception as e:
+        logger.error(f"rmbg: {e}")
+        await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL_RMBG)
+    return S_MAIN
+
 # ── fallback ──────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data.clear()
@@ -496,6 +535,7 @@ def build_app():
             S_QR_CREATE:   [MessageHandler(TXT,qr_create),            CBQ],
             S_QR_SCAN:     [MessageHandler(IMG,qr_scan),              CBQ],
             S_GOLD:        [CBQ],
+            S_RMBG:        [MessageHandler(IMG,rmbg_handler), CBQ],
         },
         fallbacks=[CommandHandler("start",cmd_start),CallbackQueryHandler(cb),MessageHandler(filters.ALL,fallback)],
         per_message=False,allow_reentry=False,
