@@ -2,7 +2,8 @@ modules = ["python-3.12", "nix"]
 
 [deployment]
 router = "application"
-deploymentTarget = "autoscale"
+deploymentTarget = "vm"
+run = ["python3", "bot.py"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
