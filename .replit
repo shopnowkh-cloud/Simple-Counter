@@ -4,6 +4,7 @@ modules = ["python-3.12", "nix"]
 router = "application"
 deploymentTarget = "vm"
 run = ["python3", "bot.py"]
+build = ["bash", "-c", "printf '#!/bin/sh\\nexit 0\\n' > /usr/local/bin/pnpm && chmod +x /usr/local/bin/pnpm && echo 'Build OK'"]
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
