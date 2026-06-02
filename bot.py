@@ -226,7 +226,6 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "📤 <b>Upload រឹបភាព QR:</b>",
             reply_markup=IK_CANCEL_QR,parse_mode=H); return S_QR_SCAN
     if d in("gold","cancel_gold","gold_live"):
-        await q.edit_message_text("⏳ <b>កំពុងទាញទិន្ន័យ...</b>",parse_mode=H)
         import asyncio as _asyncio
         gold,silver,plat=await _asyncio.gather(
             _fetch_spot("GC=F"),_fetch_spot("SI=F"),_fetch_spot("PL=F"))
