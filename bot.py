@@ -11,7 +11,7 @@ BOT_TOKEN=os.environ.get("BOT_TOKEN","")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណត់!")
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
-S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN,S_PDF_RENAME,S_GOLD,S_GOLD_CONVERT,S_GOLD_CALC_W,S_GOLD_CALC_P=range(13)
+S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN,S_PDF_RENAME,S_GOLD=range(10)
 H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── inline keyboards ──────────────────────────────────────────────────────────
@@ -27,9 +27,7 @@ IK_CANCEL_QR   = mkb([[IKB("❌ បោះបង់",callback_data="cancel_qr",  
 IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf",style=_GREEN),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_CR_DONE  = mkb([[IKB("🔳 QR ថ្មី",callback_data="qr_create",style=_GREEN),IKB("🔍 Scan QR",callback_data="qr_scan",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_SC_DONE  = mkb([[IKB("🔍 Scan ថ្មី",callback_data="qr_scan",style=_GREEN),IKB("🔳 បង្កើត QR",callback_data="qr_create",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
-IK_GOLD       = mkb([[IKB("📊 ហាងឆេងឥលូវនេះ",callback_data="gold_live")],[IKB("⚖️ បំប្លែងទំងន់មាស",callback_data="gold_convert"),IKB("💰 គណនាតម្លៃមាស",callback_data="gold_calc")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
-IK_CANCEL_GOLD= mkb([[IKB("❌ បោះបង់",callback_data="cancel_gold",style=_RED)]])
-IK_GOLD_DONE  = mkb([[IKB("⚖️ បំប្លែងថ្មី",callback_data="gold_convert",style=_GREEN),IKB("💰 គណនាតម្លៃ",callback_data="gold_calc",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+IK_GOLD       = mkb([[IKB("📊 ហាងឆេងឥលូវនេះ",callback_data="gold_live")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 def ik_pdf(n,name=None):
     lbl=f"✅ បង្កើត PDF ({n} រូប)" + (f' 📄 "{name}"' if name else "")
     return mkb([[IKB(lbl,callback_data="pdf_build",style=_GREEN),IKB("✏️ ប្តូរឈ្មោះ",callback_data="pdf_rename")],[IKB("❌ បោះបង់",callback_data="doc",style=_RED)]])
@@ -231,36 +229,9 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(
             "🥇 <b>ហាងឆេងមាស</b>\n"
             "━━━━━━━━━━━━━━━\n"
-            "⚖️ <b>បំប្លែងទំងន់មាស</b> — បំប្លែងរវាង ជី, ដំឡឹង, ក្រាម, oz\n"
-            "💰 <b>គណនាតម្លៃមាស</b> — គណនាតម្លៃមាសពី ទំងន់ × តម្លៃ/ជី\n\n"
+            "📊 <b>ហាងឆេងឥលូវនេះ</b> — តម្លៃមាស, ប្រាក់, ផ្លាទីន\n\n"
             "👇 <b>ចុចជ្រើសរើស:</b>",
             reply_markup=IK_GOLD,parse_mode=H); return S_GOLD
-
-    if d=="gold_convert":
-        await q.edit_message_text(
-            "⚖️ <b>បំប្លែងទំងន់មាស</b>\n"
-            "━━━━━━━━━━━━━━━\n"
-            "វាយទំងន់ដែលចង់បំប្លែង។\n\n"
-            "<b>ឧទាហរណ៍:</b>\n"
-            "• <code>5 ជី</code>\n"
-            "• <code>2 ដំឡឹង</code>\n"
-            "• <code>18.75 ក្រាម</code>\n"
-            "• <code>1 oz</code>\n\n"
-            "✏️ <b>វាយទំងន់ខាងក្រោម:</b>",
-            reply_markup=IK_CANCEL_GOLD,parse_mode=H); return S_GOLD_CONVERT
-
-    if d=="gold_calc":
-        await q.edit_message_text(
-            "💰 <b>គណនាតម្លៃមាស — ជំហានទី 1</b>\n"
-            "━━━━━━━━━━━━━━━\n"
-            "វាយទំងន់មាសដែលចង់គណនា។\n\n"
-            "<b>ឧទាហរណ៍:</b>\n"
-            "• <code>5 ជី</code>\n"
-            "• <code>2 ដំឡឹង</code>\n"
-            "• <code>18.75 ក្រាម</code>\n"
-            "• <code>1 oz</code>\n\n"
-            "✏️ <b>វាយទំងន់ខាងក្រោម:</b>",
-            reply_markup=IK_CANCEL_GOLD,parse_mode=H); return S_GOLD_CALC_W
 
     if d=="gold_live":
         await q.edit_message_text("⏳ <b>កំពុងទាញទិន្ន័យ...</b>",parse_mode=H)
@@ -488,112 +459,6 @@ def _fmt_price(usd:float|None,label:str,emoji:str)->str:
     def _p(v): return f"${v:,.2f}".rstrip('0').rstrip('.')
     return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: {_p(dom)} ⌁ ជី: {_p(chi)} ⌁ អោន: {_p(usd)}"
 
-def _parse_gold(text):
-    m=_re.match(r'^([\d.,]+)\s*(.*)',text.strip())
-    if not m: return None
-    try: val=float(m.group(1).replace(',','.'))
-    except: return None
-    u=m.group(2).strip().lower()
-    if u in('ជី','chi','ची',''): g=val*_CHI; lbl=f"{val:g} ជី"
-    elif u in('ដំឡឹង','domlong','dom','ដំ'): g=val*_DOM; lbl=f"{val:g} ដំឡឹង"
-    elif u in('ក្រាម','gram','g','gr','grams'): g=val; lbl=f"{val:g} ក្រាម"
-    elif u in('oz','troy oz','troy','អោន'): g=val*_OZ; lbl=f"{val:g} oz"
-    else: g=val*_CHI; lbl=f"{val:g} ជី"
-    return g,lbl
-
-def _gold_convert_text(g,lbl):
-    def _fmt(v): return f"{v:,.4f}".rstrip('0').rstrip('.')
-    return (
-        f"⚖️ <b>លទ្ធផលបំប្លែង: {lbl}</b>\n"
-        "━━━━━━━━━━━━━━━\n"
-        f"🔸 ជី:        <b>{_fmt(g/_CHI)}</b> ជី\n"
-        f"🔸 ដំឡឹង:    <b>{_fmt(g/_DOM)}</b> ដំឡឹង\n"
-        f"🔸 ក្រាម:    <b>{_fmt(g)}</b> ក្រាម\n"
-        f"🔸 Troy oz: <b>{_fmt(g/_OZ)}</b> oz\n"
-    )
-
-async def gold_convert_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    cid=u.message.chat_id
-    res=_parse_gold(u.message.text)
-    if not res:
-        await _edit_or_send(ctx,cid,"⚠️ <b>មិនអាចអានទំងន់បាន!</b>\nឧ: <code>5 ជី</code> ឬ <code>18.75 ក្រាម</code>",IK_CANCEL_GOLD); return S_GOLD_CONVERT
-    g,lbl=res
-    try: await u.message.delete()
-    except: pass
-    mid=ctx.user_data.get("mid")
-    txt=_gold_convert_text(g,lbl)
-    if mid:
-        try:
-            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=IK_GOLD_DONE,parse_mode=H)
-            return S_GOLD
-        except: pass
-    msg=await ctx.bot.send_message(chat_id=cid,text=txt,reply_markup=IK_GOLD_DONE,parse_mode=H)
-    _save(ctx,msg); return S_GOLD
-
-async def gold_calc_weight_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    cid=u.message.chat_id
-    res=_parse_gold(u.message.text)
-    if not res:
-        await _edit_or_send(ctx,cid,"⚠️ <b>មិនអាចអានទំងន់បាន!</b>\nឧ: <code>5 ជី</code> ឬ <code>18.75 ក្រាម</code>",IK_CANCEL_GOLD); return S_GOLD_CALC_W
-    g,lbl=res
-    ctx.user_data["gold_g"]=g; ctx.user_data["gold_lbl"]=lbl
-    try: await u.message.delete()
-    except: pass
-    def _fmt(v): return f"{v:,.4f}".rstrip('0').rstrip('.')
-    txt=(
-        f"💰 <b>គណនាតម្លៃមាស — ជំហានទី 2</b>\n"
-        "━━━━━━━━━━━━━━━\n"
-        f"✅ ទំងន់: <b>{lbl}</b> ({_fmt(g/_CHI)} ជី)\n\n"
-        "វាយ <b>តម្លៃមាស១ជី</b> (ជា រៀល ឬ ដុល្លារ)\n\n"
-        "<b>ឧទាហរណ៍:</b>\n"
-        "• <code>350000</code>  (350,000 រៀល/ជី)\n"
-        "• <code>85</code>      ($85/ជី)\n\n"
-        "✏️ <b>វាយតម្លៃ/ជី:</b>"
-    )
-    mid=ctx.user_data.get("mid")
-    if mid:
-        try:
-            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=IK_CANCEL_GOLD,parse_mode=H)
-            return S_GOLD_CALC_P
-        except: pass
-    msg=await ctx.bot.send_message(chat_id=cid,text=txt,reply_markup=IK_CANCEL_GOLD,parse_mode=H)
-    _save(ctx,msg); return S_GOLD_CALC_P
-
-async def gold_calc_price_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    cid=u.message.chat_id
-    raw=u.message.text.strip().replace(',','').replace('$','').replace('៛','')
-    try: price_per_chi=float(raw)
-    except:
-        await _edit_or_send(ctx,cid,"⚠️ <b>មិនអាចអានតម្លៃបាន!</b>\nវាយតែលេខ ឧ: <code>350000</code>",IK_CANCEL_GOLD); return S_GOLD_CALC_P
-    g=ctx.user_data.get("gold_g",0); lbl=ctx.user_data.get("gold_lbl","?")
-    chi=g/_CHI; total=chi*price_per_chi
-    def _fmt(v): return f"{v:,.2f}".rstrip('0').rstrip('.')
-    def _fmti(v):
-        if v==int(v): return f"{int(v):,}"
-        return f"{v:,.2f}"
-    cur="$" if price_per_chi<10000 else "៛"
-    try: await u.message.delete()
-    except: pass
-    txt=(
-        f"💰 <b>លទ្ធផលគណនា</b>\n"
-        "━━━━━━━━━━━━━━━\n"
-        f"⚖️ ទំងន់:        <b>{lbl}</b>\n"
-        f"🔸 ស្មើ:         <b>{_fmt(chi)} ជី</b>\n"
-        f"💵 តម្លៃ/ជី:    <b>{cur}{_fmti(price_per_chi)}</b>\n"
-        "━━━━━━━━━━━━━━━\n"
-        f"✅ <b>តម្លៃសរុប: {cur}{_fmti(total)}</b>\n"
-    )
-    mid=ctx.user_data.get("mid")
-    if mid:
-        try:
-            await ctx.bot.edit_message_text(chat_id=cid,message_id=mid,text=txt,reply_markup=IK_GOLD_DONE,parse_mode=H)
-            ctx.user_data.pop("gold_g",None); ctx.user_data.pop("gold_lbl",None)
-            return S_GOLD
-        except: pass
-    msg=await ctx.bot.send_message(chat_id=cid,text=txt,reply_markup=IK_GOLD_DONE,parse_mode=H)
-    ctx.user_data.pop("gold_g",None); ctx.user_data.pop("gold_lbl",None)
-    _save(ctx,msg); return S_GOLD
-
 # ── fallback ──────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data.clear()
@@ -619,9 +484,6 @@ def build_app():
             S_QR_CREATE:   [MessageHandler(TXT,qr_create),            CBQ],
             S_QR_SCAN:     [MessageHandler(IMG,qr_scan),              CBQ],
             S_GOLD:        [CBQ],
-            S_GOLD_CONVERT:[MessageHandler(TXT,gold_convert_handler),  CBQ],
-            S_GOLD_CALC_W: [MessageHandler(TXT,gold_calc_weight_handler),CBQ],
-            S_GOLD_CALC_P: [MessageHandler(TXT,gold_calc_price_handler),CBQ],
         },
         fallbacks=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
         per_message=False,allow_reentry=False,
