@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import asyncio, json, os, sys
+import asyncio, json, os, sys, threading
 from http.server import BaseHTTPRequestHandler
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -7,12 +7,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from telegram import Update
 from bot import build_app
 
+# ── Persistent loop + app (module-level, reused across warm requests) ──────────
+_loop = asyncio.new_event_loop()
 
-async def _process(body: bytes) -> None:
-    app = build_app()
-    async with app:
-        update = Update.de_json(json.loads(body), app.bot)
-        await app.process_update(update)
+def _run_loop(loop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+threading.Thread(target=_run_loop, args=(_loop,), daemon=True).start()
+
+_app = build_app()
+asyncio.run_coroutine_threadsafe(_app.initialize(), _loop).result(timeout=15)
 
 
 class handler(BaseHTTPRequestHandler):
@@ -20,13 +25,15 @@ class handler(BaseHTTPRequestHandler):
         try:
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length)
-            asyncio.run(_process(body))
-            code = 200
-            msg = b'{"ok":true}'
+            update = Update.de_json(json.loads(body), _app.bot)
+            future = asyncio.run_coroutine_threadsafe(
+                _app.process_update(update), _loop
+            )
+            future.result(timeout=25)
+            code, msg = 200, b'{"ok":true}'
         except Exception as e:
             print(f"[webhook] error: {e}")
-            code = 500
-            msg = b'{"ok":false}'
+            code, msg = 500, b'{"ok":false}'
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
