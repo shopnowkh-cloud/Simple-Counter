@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import os,io,logging,warnings
 from PIL import Image; from fpdf import FPDF; import fitz
-import cv2; import numpy as np; import qrcode
+import qrcode
 from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup as IKM,InputFile,CopyTextButton
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode,KeyboardButtonStyle; from telegram.warnings import PTBUserWarning
@@ -367,6 +367,7 @@ async def qr_scan(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if not p and not dc:
         await _edit_or_send(ctx,cid,"⚠️ Upload <b>រូបភាព QR</b>!",IK_CANCEL_QR); return S_QR_SCAN
     try:
+        import cv2,numpy as np
         raw=bytes(await (await ctx.bot.get_file(p.file_id if p else dc.file_id)).download_as_bytearray())
         img=Image.open(io.BytesIO(raw)).convert("RGB")
         img_np=cv2.cvtColor(np.array(img),cv2.COLOR_RGB2BGR)
