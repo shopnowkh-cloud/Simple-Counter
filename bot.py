@@ -463,7 +463,7 @@ def build_app():
     PDF_F=filters.Document.MimeType("application/pdf")|filters.Document.FileExtension("pdf")
     CBQ=CallbackQueryHandler(cb)
     app.add_handler(ConversationHandler(
-        entry_points=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
+        entry_points=[CommandHandler("start",cmd_start),CallbackQueryHandler(cb),MessageHandler(filters.ALL,fallback)],
         states={
             S_MAIN:        [CBQ],
             S_DOC:         [CBQ],
