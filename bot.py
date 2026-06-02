@@ -467,23 +467,38 @@ async def _fetch_sq(symbol:str,client:_httpx.AsyncClient)->float|None:
     except Exception as e:
         logger.warning(f"fetch_sq {symbol}: {e}"); return None
 
+async def _fetch_khr(client:_httpx.AsyncClient)->float|None:
+    try:
+        r=await client.get("https://open.er-api.com/v6/latest/USD"); r.raise_for_status()
+        return float(r.json()["rates"]["KHR"])
+    except Exception as e:
+        logger.warning(f"fetch_khr: {e}"); return None
+
 async def _fetch_all_spots()->dict:
     import asyncio as _asyncio
     hdrs={"User-Agent":"Mozilla/5.0","Accept":"application/json"}
     try:
         async with _httpx.AsyncClient(timeout=8,headers=hdrs) as c:
-            gold,silver,plat=await _asyncio.gather(
-                _fetch_sq("XAU",c),_fetch_sq("XAG",c),_fetch_sq("XPT",c))
-            return {"gold":gold,"silver":silver,"platinum":plat}
+            gold,silver,plat,khr=await _asyncio.gather(
+                _fetch_sq("XAU",c),_fetch_sq("XAG",c),_fetch_sq("XPT",c),_fetch_khr(c))
+            return {"gold":gold,"silver":silver,"platinum":plat,"khr":khr}
     except Exception as e:
-        logger.warning(f"fetch_all_spots: {e}"); return {"gold":None,"silver":None,"platinum":None}
+        logger.warning(f"fetch_all_spots: {e}"); return {"gold":None,"silver":None,"platinum":None,"khr":None}
 
-def _fmt_price(usd:float|None,label:str,emoji:str)->str:
+def _fmt_price(usd:float|None,label:str,emoji:str,khr:float|None=None)->str:
     if usd is None:
         return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: N/A ⌁ ជី: N/A ⌁ អោន: N/A"
     dom=usd*(_DOM/_OZ); chi=usd*(_CHI/_OZ)
-    def _p(v): return f"${v:,.2f}".rstrip('0').rstrip('.')
-    return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: {_p(dom)} ⌁ ជី: {_p(chi)} ⌁ អោន: {_p(usd)}"
+    def _usd(v): return f"${v:,.2f}"
+    def _r(v): return f"៛{v:,.0f}"
+    if khr:
+        dom_k=dom*khr; chi_k=chi*khr; oz_k=usd*khr
+        return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
+                f"ដំឡឹង: {_r(dom_k)} <i>({_usd(dom)})</i>\n"
+                f"ជី: {_r(chi_k)} <i>({_usd(chi)})</i>\n"
+                f"អោន: {_r(oz_k)} <i>({_usd(usd)})</i>")
+    return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
+            f"ដំឡឹង: {_usd(dom)} ⌁ ជី: {_usd(chi)} ⌁ អោន: {_usd(usd)}")
 
 # ── fallback ──────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
