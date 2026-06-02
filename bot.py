@@ -89,12 +89,12 @@ TS=[
 async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     ctx.user_data.clear()
     msg=await u.message.reply_text(
-        f"👋 សួស្ដី <b>{u.effective_user.first_name}</b>! ខ្ញុំជា <b>Khmer Multi-Tool Bot</b>\n\n"
+        "សូមស្វាគមន៍មកកាន់ <b>RADY BOT</b> 🌱\n\n"
+        "<b>មុខងារ Bot:</b>\n\n"
         "✍️ <b>រចនាប័ទ្មអក្សរ</b> — បំប្លែងអក្សរឡាតាំងជាពុម្ពអក្សរពិសេស\n"
         "🗂️ <b>បំប្លែង PDF</b> — ផ្សំរូបភាពជា PDF ឬ PDF ជារូបភាព\n"
         "📷 <b>QR Code</b> — បង្កើត QR HD និង Scan QR Code\n"
-        "🥇 <b>ហាងឆេងមាស</b> — បំប្លែងទំងន់ & គណនាតម្លៃមាស\n\n"
-        "👇 <b>ចុចជ្រើសរើសមុខងារ:</b>",
+        "🥇 <b>ហាងឆេងមាស</b> — បំប្លែងទំងន់ & គណនាតម្លៃមាស",
         reply_markup=IK_MAIN,parse_mode=H)
     _save(ctx,msg); return S_MAIN
 
@@ -106,12 +106,12 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if d=="home":
         ctx.user_data.clear(); _save(ctx,q.message)
         await q.edit_message_text(
-            "🏠 <b>ម៉ឺនុយមេ</b>\n\n"
+            "សូមស្វាគមន៍មកកាន់ <b>RADY BOT</b> 🌱\n\n"
+            "<b>មុខងារ Bot:</b>\n\n"
             "✍️ <b>រចនាប័ទ្មអក្សរ</b> — បំប្លែងអក្សរឡាតាំងជាពុម្ពអក្សរពិសេស\n"
             "🗂️ <b>បំប្លែង PDF</b> — ផ្សំរូបភាពជា PDF ឬ PDF ជារូបភាព\n"
             "📷 <b>QR Code</b> — បង្កើត QR HD និង Scan QR Code\n"
-            "🥇 <b>ហាងឆេងមាស</b> — បំប្លែងទំងន់ & គណនាតម្លៃមាស\n\n"
-            "👇 <b>ចុចជ្រើសរើសមុខងារ:</b>",
+            "🥇 <b>ហាងឆេងមាស</b> — បំប្លែងទំងន់ & គណនាតម្លៃមាស",
             reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
     if d=="style" or d=="style_new":
@@ -127,11 +127,12 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if d=="cancel_main":
         ctx.user_data.clear(); _save(ctx,q.message)
         await q.edit_message_text(
-            "🏠 <b>ម៉ឺនុយមេ</b>\n\n"
+            "សូមស្វាគមន៍មកកាន់ <b>RADY BOT</b> 🌱\n\n"
+            "<b>មុខងារ Bot:</b>\n\n"
             "✍️ <b>រចនាប័ទ្មអក្សរ</b> — បំប្លែងអក្សរឡាតាំងជាពុម្ពអក្សរពិសេស\n"
             "🗂️ <b>បំប្លែង PDF</b> — ផ្សំរូបភាពជា PDF ឬ PDF ជារូបភាព\n"
-            "📷 <b>QR Code</b> — បង្កើត QR HD និង Scan QR Code\n\n"
-            "👇 <b>ចុចជ្រើសរើសមុខងារ:</b>",
+            "📷 <b>QR Code</b> — បង្កើត QR HD និង Scan QR Code\n"
+            "🥇 <b>ហាងឆេងមាស</b> — បំប្លែងទំងន់ & គណនាតម្លៃមាស",
             reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
     if d=="doc" or d=="cancel_doc":
