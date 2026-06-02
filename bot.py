@@ -143,8 +143,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "━━━━━━━━━━━━━━━\n"
             "បំប្លែងអក្សរឡាតាំងធម្មតា ទៅជាពុម្ពអក្សរពិសេសជាច្រើនប្រភេទ\n"
             "ដូចជា Bold, Italic, Script, Bubble, Upside-down និងច្រើនទៀត!\n\n"
-            "✏️ <b>វាយអក្សរឡាតាំងខាងក្រោម:</b>\n"
-            "<i>⚠️ ដំណើរការបានល្អជាមួយ a-z  A-Z  0-9</i>",
+            "✏️ <b>វាយអក្សរឡាតាំងខាងក្រោម:</b>",
             reply_markup=IK_CANCEL_MAIN,parse_mode=H); return S_STYLE
 
     if d=="cancel_main":
