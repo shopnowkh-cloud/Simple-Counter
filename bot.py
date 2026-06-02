@@ -489,14 +489,7 @@ def _fmt_price(usd:float|None,label:str,emoji:str,khr:float|None=None)->str:
     if usd is None:
         return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: N/A\nជី: N/A\nអោន: N/A"
     dom=usd*(_DOM/_OZ); chi=usd*(_CHI/_OZ)
-    def _r(v): return f"៛\u202f{round(v):,}"
     def _d(v): return f"${v:,.2f}"
-    if khr:
-        dom_k=dom*khr; chi_k=chi*khr
-        return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
-                f"  ដំឡឹង : <b>{_r(dom_k)}</b>  <i>({_d(dom)})</i>\n"
-                f"  ជី        : <b>{_r(chi_k)}</b>  <i>({_d(chi)})</i>\n"
-                f"  អោន    : <b>{_d(usd)}</b>")
     return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
             f"  ដំឡឹង : <b>{_d(dom)}</b>\n"
             f"  ជី        : <b>{_d(chi)}</b>\n"
