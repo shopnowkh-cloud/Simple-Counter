@@ -270,7 +270,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 # ── text style ────────────────────────────────────────────────────────────────
 async def style_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     t=u.message.text
-    btns=[IKB(fn(t),copy_text=CopyTextButton(fn(t))) for lbl,fn in TS]
+    btns=[IKB(lbl+"  "+fn(t),copy_text=CopyTextButton(fn(t))) for lbl,fn in TS]
     rows=[([btns[i],btns[i+1]] if i+1<len(btns) else [btns[i]]) for i in range(0,len(btns),2)]
     rows.append([IKB("✍️ ដំណើរការថ្មី",callback_data="style_new"),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")])
     kb=IKM(rows); txt=f"✍️ <b>Style:</b> <code>{t}</code>\n👇 ចុច button ដើម្បី <b>Copy</b>"
