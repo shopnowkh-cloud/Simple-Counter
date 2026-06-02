@@ -13,3 +13,6 @@ dependencies = [
     "qrcode>=8.2",
     "pymupdf>=1.27.0",
 ]
+
+[tool.vercel]
+entrypoint = "api.webhook:handler"
