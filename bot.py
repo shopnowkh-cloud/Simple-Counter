@@ -99,7 +99,8 @@ async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 
 # ── unified callback handler ───────────────────────────────────────────────────
 async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    q=u.callback_query; await q.answer(); d=q.data
+    q=u.callback_query; d=q.data
+    await q.answer("🔄 កំពុងធ្វើបន្ទាប់..." if d=="gold_live" else None)
     cid=q.message.chat_id; _save(ctx,q.message)
 
     if d=="home":
