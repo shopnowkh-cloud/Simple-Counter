@@ -1,16 +1,26 @@
 {
-  "name": "workspace",
-  "version": "0.0.0",
-  "license": "MIT",
+  "name": "khmer-multi-tool-bot",
+  "version": "1.0.0",
+  "type": "module",
   "scripts": {
-    "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
-    "typecheck:libs": "tsc --build",
-    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
+    "start": "tsx src/bot.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
   },
-  "private": true,
+  "dependencies": {
+    "@imgly/background-removal-node": "^1.4.5",
+    "axios": "^1.16.1",
+    "grammy": "^1.43.0",
+    "jsqr": "^1.4.0",
+    "mupdf": "^1.27.0",
+    "pdf-lib": "^1.17.1",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.33.5"
+  },
   "devDependencies": {
-    "prettier": "^3.8.3",
-    "typescript": "~5.9.3"
+    "@types/node": "^22.19.19",
+    "@types/qrcode": "^1.5.6",
+    "tsx": "^4.22.4",
+    "typescript": "^5.9.3"
   }
 }

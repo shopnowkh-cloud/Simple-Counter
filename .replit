@@ -1,4 +1,4 @@
-modules = ["python-3.12", "nix"]
+modules = ["python-3.12", "nix", "nodejs-20"]
 
 [deployment]
 router = "application"
@@ -26,12 +26,12 @@ args = "Khmer Multi-Tool Bot"
 name = "Khmer Multi-Tool Bot"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python3 bot.py"
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx tsx src/bot.ts"
 
 [agent]
 stack = "BEST_EFFORT_FALLBACK"
