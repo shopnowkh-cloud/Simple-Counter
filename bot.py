@@ -16,7 +16,7 @@ H=ParseMode.HTML; END=ConversationHandler.END
 
 # ── inline keyboards ──────────────────────────────────────────────────────────
 def mkb(rows): return IKM(rows)
-IK_MAIN  = mkb([[IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="style"),IKB("🗂️ បំប្លែង PDF",callback_data="doc")],[IKB("📷 QR Code",callback_data="qr"),IKB("🥇 ហាងឆេងមាស",callback_data="gold")]])
+IK_MAIN  = mkb([[IKB("✍️ រចនាប័ទ្មអក្សរ",callback_data="style"),IKB("🗂️ បំប្លែង PDF",callback_data="doc")],[IKB("📷 QR Code",callback_data="qr"),IKB("🥇 ហាងឆេងមាស",callback_data="gold")],[IKB("🎙️ បង្កើតសំឡេង Ai",url="https://t.me/limsovannradybot")]])
 IK_DOC   = mkb([[IKB("🖼️ រូបភាព → PDF",callback_data="photo_pdf")],[IKB("🖼️ PDF → PNG",callback_data="pdf_png"),IKB("📷 PDF → JPG",callback_data="pdf_jpg")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR    = mkb([[IKB("🔳 បង្កើត QR",callback_data="qr_create"),IKB("🔍 Scan QR",callback_data="qr_scan")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 _RED=KeyboardButtonStyle.DANGER
