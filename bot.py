@@ -486,7 +486,7 @@ def build_app():
             S_QR_SCAN:     [MessageHandler(IMG,qr_scan),              CBQ],
             S_GOLD:        [CBQ],
         },
-        fallbacks=[CommandHandler("start",cmd_start),MessageHandler(filters.ALL,fallback)],
+        fallbacks=[CommandHandler("start",cmd_start),CallbackQueryHandler(cb),MessageHandler(filters.ALL,fallback)],
         per_message=False,allow_reentry=False,
     ))
     return app
