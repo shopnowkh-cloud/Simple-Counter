@@ -69,6 +69,10 @@ SBM ={**_rng(0x1D5D4,0x41,0x5B,0x41),**_rng(0x1D5EE,0x61,0x7B,0x61),**_rng(0x1D7
 SIM ={**_rng(0x1D608,0x41,0x5B,0x41),**_rng(0x1D622,0x61,0x7B,0x61)}
 SBIM={**_rng(0x1D63C,0x41,0x5B,0x41),**_rng(0x1D656,0x61,0x7B,0x61)}
 BFM ={**_rng(0x1D56C,0x41,0x5B,0x41),**_rng(0x1D586,0x61,0x7B,0x61)}
+RI  ={**{chr(0x41+i):chr(0x1F1E6+i) for i in range(26)},**{chr(0x61+i):chr(0x1F1E6+i) for i in range(26)}}
+SQM ={**{chr(0x41+i):chr(0x1F130+i) for i in range(26)},**{chr(0x61+i):chr(0x1F130+i) for i in range(26)}}
+PAR ={**{chr(0x61+i):chr(0x249C+i) for i in range(26)},**{chr(0x41+i):chr(0x249C+i) for i in range(26)}}
+SUBM={"a":"ₐ","e":"ₑ","h":"ₕ","i":"ᵢ","j":"ⱼ","k":"ₖ","l":"ₗ","m":"ₘ","n":"ₙ","o":"ₒ","p":"ₚ","r":"ᵣ","s":"ₛ","t":"ₜ","u":"ᵤ","v":"ᵥ","x":"ₓ","0":"₀","1":"₁","2":"₂","3":"₃","4":"₄","5":"₅","6":"₆","7":"₇","8":"₈","9":"₉"}
 TS=[
     ("𝗕𝗼𝗹𝗱",             lambda t:_t(t,BM)),
     ("𝘐𝘵𝘢𝘭𝘪𝘤",           lambda t:_t(t,IM)),
@@ -85,12 +89,19 @@ TS=[
     ("𝙼𝚘𝚗𝚘",              lambda t:_t(t,MOM)),
     ("Ｆｕｌｌｗｉｄｔｈ",  lambda t:_t(t,FW)),
     ("ˢᵘᵖᵉʳˢᶜʳⁱᵖᵗ",       lambda t:_t(t,SUPM)),
+    ("ₛᵤᵦₛcᵣᵢₚₜ",          lambda t:_t(t,SUBM)),
     ("Sᴍᴀʟʟ Cᴀᴘꜱ",        lambda t:_t(t.lower(),SC)),
     ("Ⓑⓤⓑⓑⓛⓔ",          lambda t:_t(t,BB)),
+    ("🄰🄱🄲 Squared",       lambda t:_t(t,SQM)),
+    ("⒜⒝⒞ Paren",          lambda t:_t(t.lower(),PAR)),
+    ("🇷🇪🇬🇮🇴🇳",            lambda t:_t(t,RI)),
     ("uʍop ǝpᴉsdn",        lambda t:_t(t,UD)[::-1]),
     ("S\u0336t\u0336r\u0336i\u0336k\u0336e\u0336",  lambda t:"".join(c+"\u0336" for c in t)),
     ("U\u0332n\u0332d\u0332e\u0332r\u0332",          lambda t:"".join(c+"\u0332" for c in t)),
     ("D\u0333o\u0333u\u0333b\u0333l\u0333e\u0333",   lambda t:"".join(c+"\u0333" for c in t)),
+    ("O\u0305v\u0305e\u0305r\u0305l\u0305i\u0305n\u0305e\u0305",lambda t:"".join(c+"\u0305" for c in t)),
+    ("T\u0303i\u0303l\u0303d\u0303e\u0303",          lambda t:"".join(c+"\u0303" for c in t)),
+    ("S\u0338l\u0338a\u0338s\u0338h\u0338",          lambda t:"".join(c+"\u0338" for c in t)),
     ("W\u0330a\u0330v\u0330y\u0330",                 lambda t:"".join(c+"\u0330" for c in t)),
     ("D\u0307o\u0307t\u0307t\u0307e\u0307d\u0307",   lambda t:"".join(c+"\u0307" for c in t)),
     ("G\u0354l\u0354i\u0354t\u0354c\u0354h\u0354",   lambda t:"".join(c+"".join(["\u0315","\u035c","\u0355"][i%3]) for i,c in enumerate(t))),
