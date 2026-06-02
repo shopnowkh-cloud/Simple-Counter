@@ -114,10 +114,10 @@ async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     msg=await u.message.reply_text(
         "សូមស្វាគមន៍មកកាន់ <b>RADY BOT</b> 🌱\n\n"
         "<b>មុខងារ Bot:</b>\n\n"
-        "✍️ <b>រចនាប័ទ្មអក្សរ</b> — បំប្លែងអក្សរឡាតាំងជាពុម្ពអក្សរពិសេស\n"
-        "🗂️ <b>បំប្លែង PDF</b> — ផ្សំរូបភាពជា PDF ឬ PDF ជារូបភាព\n"
-        "📷 <b>QR Code</b> — បង្កើត QR HD និង Scan QR Code\n"
-        "🥇 <b>ហាងឆេងមាស</b> — បំប្លែងទំងន់ & គណនាតម្លៃមាស",
+        "✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n"
+        "🗂️ <b>បំប្លែង PDF</b>\n\n"
+        "📷 <b>QR Code</b>\n\n"
+        "🥇 <b>ហាងឆេងមាស</b>",
         reply_markup=IK_MAIN,parse_mode=H)
     _save(ctx,msg); return S_MAIN
 
@@ -131,10 +131,10 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(
             "សូមស្វាគមន៍មកកាន់ <b>RADY BOT</b> 🌱\n\n"
             "<b>មុខងារ Bot:</b>\n\n"
-            "✍️ <b>រចនាប័ទ្មអក្សរ</b> — បំប្លែងអក្សរឡាតាំងជាពុម្ពអក្សរពិសេស\n"
-            "🗂️ <b>បំប្លែង PDF</b> — ផ្សំរូបភាពជា PDF ឬ PDF ជារូបភាព\n"
-            "📷 <b>QR Code</b> — បង្កើត QR HD និង Scan QR Code\n"
-            "🥇 <b>ហាងឆេងមាស</b> — បំប្លែងទំងន់ & គណនាតម្លៃមាស",
+            "✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n"
+            "🗂️ <b>បំប្លែង PDF</b>\n\n"
+            "📷 <b>QR Code</b>\n\n"
+            "🥇 <b>ហាងឆេងមាស</b>",
             reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
     if d=="style" or d=="style_new":
@@ -150,10 +150,10 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text(
             "សូមស្វាគមន៍មកកាន់ <b>RADY BOT</b> 🌱\n\n"
             "<b>មុខងារ Bot:</b>\n\n"
-            "✍️ <b>រចនាប័ទ្មអក្សរ</b> — បំប្លែងអក្សរឡាតាំងជាពុម្ពអក្សរពិសេស\n"
-            "🗂️ <b>បំប្លែង PDF</b> — ផ្សំរូបភាពជា PDF ឬ PDF ជារូបភាព\n"
-            "📷 <b>QR Code</b> — បង្កើត QR HD និង Scan QR Code\n"
-            "🥇 <b>ហាងឆេងមាស</b> — បំប្លែងទំងន់ & គណនាតម្លៃមាស",
+            "✍️ <b>រចនាប័ទ្មអក្សរ</b>\n\n"
+            "🗂️ <b>បំប្លែង PDF</b>\n\n"
+            "📷 <b>QR Code</b>\n\n"
+            "🥇 <b>ហាងឆេងមាស</b>",
             reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
     if d=="doc" or d=="cancel_doc":
