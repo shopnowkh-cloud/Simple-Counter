@@ -252,16 +252,16 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if d in("gold","cancel_gold","gold_live"):
         await q.edit_message_text("⏳ <b>កំពុងទាញយកទិន្ន័យ...</b>",parse_mode=H)
         spots=await _fetch_all_spots()
-        gold=spots["gold"]; silver=spots["silver"]; plat=spots["platinum"]; khr=spots["khr"]
+        gold=spots["gold"]; silver=spots["silver"]; plat=spots["platinum"]
         IK_LIVE=mkb([[IKB("🔄 ធ្វើបន្ទាប់",callback_data="gold_live",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
         txt=(
             "📊 <b>ហាងឆេងឥលូវនេះ</b> <i>(យកតាម ទីផ្សារកម្ពុជា)</i>\n"
             "━━━━━━━━━━━━━━━━━━━\n"
-            +_fmt_price(gold,"មាស","🥇",khr)+"\n"
+            +_fmt_price(gold,"មាស","🥇",chg=spots.get("gold_chg"),pct=spots.get("gold_pct"))+"\n"
             "━━━━━━━━━━━━━━━━━━━\n"
-            +_fmt_price(silver,"ប្រាក់","🥈",khr)+"\n"
+            +_fmt_price(silver,"ប្រាក់","🥈",chg=spots.get("silver_chg"),pct=spots.get("silver_pct"))+"\n"
             "━━━━━━━━━━━━━━━━━━━\n"
-            +_fmt_price(plat,"ផ្លាទីន","🔩",khr)+"\n"
+            +_fmt_price(plat,"ផ្លាទីន","🔩",chg=spots.get("plat_chg"),pct=spots.get("plat_pct"))+"\n"
         )
         await q.edit_message_text(txt,reply_markup=IK_LIVE,parse_mode=H); return S_GOLD
 
@@ -458,42 +458,38 @@ async def pdf_rename_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 import re as _re, httpx as _httpx
 _CHI=3.75; _DOM=37.5; _OZ=31.1035
 
-async def _fetch_sq(symbol:str,client:_httpx.AsyncClient)->float|None:
-    url=f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{symbol}/USD"
-    try:
-        r=await client.get(url); r.raise_for_status()
-        data=r.json()
-        return float(data[0]["spreadProfilePrices"][0]["bid"])
-    except Exception as e:
-        logger.warning(f"fetch_sq {symbol}: {e}"); return None
-
-async def _fetch_khr(client:_httpx.AsyncClient)->float|None:
-    try:
-        r=await client.get("https://open.er-api.com/v6/latest/USD"); r.raise_for_status()
-        return float(r.json()["rates"]["KHR"])
-    except Exception as e:
-        logger.warning(f"fetch_khr: {e}"); return None
-
 async def _fetch_all_spots()->dict:
-    import asyncio as _asyncio
-    hdrs={"User-Agent":"Mozilla/5.0","Accept":"application/json"}
+    hdrs={"User-Agent":"Mozilla/5.0","Content-Type":"application/json",
+          "Origin":"https://www.tradingview.com","Referer":"https://www.tradingview.com/"}
+    body={"symbols":{"tickers":["TVC:GOLD","TVC:SILVER","TVC:PLATINUM"],"query":{"types":[]}},"columns":["close","change_abs","change"]}
+    empty={"gold":None,"silver":None,"platinum":None,"gold_chg":None,"silver_chg":None,"plat_chg":None,"khr":None}
     try:
         async with _httpx.AsyncClient(timeout=8,headers=hdrs) as c:
-            gold,silver,plat,khr=await _asyncio.gather(
-                _fetch_sq("XAU",c),_fetch_sq("XAG",c),_fetch_sq("XPT",c),_fetch_khr(c))
-            return {"gold":gold,"silver":silver,"platinum":plat,"khr":khr}
+            r=await c.post("https://scanner.tradingview.com/global/scan",json=body); r.raise_for_status()
+            rows={item["s"]:item["d"] for item in r.json().get("data",[])}
+            def _v(k): return rows.get(k,[None,None,None])
+            gd=_v("TVC:GOLD"); sd=_v("TVC:SILVER"); pd=_v("TVC:PLATINUM")
+            return {"gold":gd[0],"silver":sd[0],"platinum":pd[0],
+                    "gold_chg":gd[1],"silver_chg":sd[1],"plat_chg":pd[1],
+                    "gold_pct":gd[2],"silver_pct":sd[2],"plat_pct":pd[2],"khr":None}
     except Exception as e:
-        logger.warning(f"fetch_all_spots: {e}"); return {"gold":None,"silver":None,"platinum":None,"khr":None}
+        logger.warning(f"fetch_all_spots: {e}"); return empty
 
-def _fmt_price(usd:float|None,label:str,emoji:str,khr:float|None=None)->str:
+def _fmt_price(usd:float|None,label:str,emoji:str,khr:float|None=None,chg:float|None=None,pct:float|None=None)->str:
     if usd is None:
         return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: N/A\nជី: N/A\nអោន: N/A"
     dom=usd*(_DOM/_OZ); chi=usd*(_CHI/_OZ)
     def _d(v): return f"${round(v):,}"
+    if chg is not None and pct is not None:
+        arrow="▲" if chg>=0 else "▼"
+        sign="+" if chg>=0 else ""
+        chg_line=f"\n  ការផ្លាស់ប្តូរ: <b>{arrow} {sign}{round(chg):,} ({sign}{pct:.2f}%)</b>"
+    else:
+        chg_line=""
     return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
             f"  ដំឡឹង : <b>{_d(dom)}</b>\n"
             f"  ជី        : <b>{_d(chi)}</b>\n"
-            f"  អោន    : <b>{_d(usd)}</b>")
+            f"  អោន    : <b>{_d(usd)}</b>{chg_line}")
 
 # ── fallback ──────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
