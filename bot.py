@@ -252,16 +252,16 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     if d in("gold","cancel_gold","gold_live"):
         await q.edit_message_text("⏳ <b>កំពុងទាញយកទិន្ន័យ...</b>",parse_mode=H)
         spots=await _fetch_all_spots()
-        gold=spots["gold"]; silver=spots["silver"]; plat=spots["platinum"]
+        gold=spots["gold"]; silver=spots["silver"]; plat=spots["platinum"]; khr=spots["khr"]
         IK_LIVE=mkb([[IKB("🔄 ធ្វើបន្ទាប់",callback_data="gold_live",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
         txt=(
-            "📊 <b>ហាងឆេងឥលូវនេះ</b> <i>(Real-time Global)</i>\n"
+            "📊 <b>ហាងឆេងឥលូវនេះ</b> <i>(តម្លៃ Real-time)</i>\n"
             "━━━━━━━━━━━━━━━━━━━\n"
-            +_fmt_price(gold,"មាស #gold","🥇")+"\n"
+            +_fmt_price(gold,"មាស","🥇",khr)+"\n"
             "━━━━━━━━━━━━━━━━━━━\n"
-            +_fmt_price(silver,"ប្រាក់ #silver","🥈")+"\n"
+            +_fmt_price(silver,"ប្រាក់","🥈",khr)+"\n"
             "━━━━━━━━━━━━━━━━━━━\n"
-            +_fmt_price(plat,"ផ្លាទីន #platinum","🔩")+"\n"
+            +_fmt_price(plat,"ផ្លាទីន","🔩",khr)+"\n"
         )
         await q.edit_message_text(txt,reply_markup=IK_LIVE,parse_mode=H); return S_GOLD
 
@@ -487,18 +487,20 @@ async def _fetch_all_spots()->dict:
 
 def _fmt_price(usd:float|None,label:str,emoji:str,khr:float|None=None)->str:
     if usd is None:
-        return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: N/A ⌁ ជី: N/A ⌁ អោន: N/A"
+        return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: N/A\nជី: N/A\nអោន: N/A"
     dom=usd*(_DOM/_OZ); chi=usd*(_CHI/_OZ)
-    def _usd(v): return f"${v:,.2f}"
-    def _r(v): return f"៛{v:,.0f}"
+    def _r(v): return f"៛\u202f{round(v):,}"
+    def _d(v): return f"${v:,.2f}"
     if khr:
-        dom_k=dom*khr; chi_k=chi*khr; oz_k=usd*khr
+        dom_k=dom*khr; chi_k=chi*khr
         return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
-                f"ដំឡឹង: {_r(dom_k)} <i>({_usd(dom)})</i>\n"
-                f"ជី: {_r(chi_k)} <i>({_usd(chi)})</i>\n"
-                f"អោន: {_r(oz_k)} <i>({_usd(usd)})</i>")
+                f"  ដំឡឹង : <b>{_r(dom_k)}</b>  <i>({_d(dom)})</i>\n"
+                f"  ជី        : <b>{_r(chi_k)}</b>  <i>({_d(chi)})</i>\n"
+                f"  អោន    : <b>{_d(usd)}</b>")
     return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
-            f"ដំឡឹង: {_usd(dom)} ⌁ ជី: {_usd(chi)} ⌁ អោន: {_usd(usd)}")
+            f"  ដំឡឹង : <b>{_d(dom)}</b>\n"
+            f"  ជី        : <b>{_d(chi)}</b>\n"
+            f"  អោន    : <b>{_d(usd)}</b>")
 
 # ── fallback ──────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
