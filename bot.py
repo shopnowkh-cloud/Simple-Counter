@@ -251,12 +251,11 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             reply_markup=IK_CANCEL_QR,parse_mode=H); return S_QR_SCAN
     if d in("gold","cancel_gold","gold_live"):
         await q.edit_message_text("⏳ <b>កំពុងទាញយកទិន្ន័យ...</b>",parse_mode=H)
-        import asyncio as _asyncio
-        gold,silver,plat=await _asyncio.gather(
-            _fetch_spot("GC=F"),_fetch_spot("SI=F"),_fetch_spot("PL=F"))
+        spots=await _fetch_all_spots()
+        gold=spots["gold"]; silver=spots["silver"]; plat=spots["platinum"]
         IK_LIVE=mkb([[IKB("🔄 ធ្វើបន្ទាប់",callback_data="gold_live",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
         txt=(
-            "📊 <b>ហាងឆេងឥលូវនេះ</b> <i>(ទិន្ន័យ~៥នាទីមុន)</i>\n"
+            "📊 <b>ហាងឆេងឥលូវនេះ</b> <i>(Real-time Global)</i>\n"
             "━━━━━━━━━━━━━━━━━━━\n"
             +_fmt_price(gold,"មាស #gold","🥇")+"\n"
             "━━━━━━━━━━━━━━━━━━━\n"
@@ -459,15 +458,21 @@ async def pdf_rename_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 import re as _re, httpx as _httpx
 _CHI=3.75; _DOM=37.5; _OZ=31.1035
 
-async def _fetch_spot(symbol:str)->float|None:
-    url=f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=5m&range=1d"
+async def _fetch_all_spots()->dict:
+    url="https://metals.live/api/spot"
     hdrs={"User-Agent":"Mozilla/5.0","Accept":"application/json"}
     try:
         async with _httpx.AsyncClient(timeout=8) as c:
             r=await c.get(url,headers=hdrs); r.raise_for_status()
-            return float(r.json()["chart"]["result"][0]["meta"]["regularMarketPrice"])
+            data=r.json()
+            if isinstance(data,list): data=data[0]
+            return {
+                "gold":    float(data.get("gold")    or 0) or None,
+                "silver":  float(data.get("silver")  or 0) or None,
+                "platinum":float(data.get("platinum") or 0) or None,
+            }
     except Exception as e:
-        logger.warning(f"fetch_spot {symbol}: {e}"); return None
+        logger.warning(f"fetch_all_spots: {e}"); return {"gold":None,"silver":None,"platinum":None}
 
 def _fmt_price(usd:float|None,label:str,emoji:str)->str:
     if usd is None:
