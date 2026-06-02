@@ -480,16 +480,10 @@ def _fmt_price(usd:float|None,label:str,emoji:str,khr:float|None=None,chg:float|
         return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: N/A\nជី: N/A\nអោន: N/A"
     dom=usd*(_DOM/_OZ); chi=usd*(_CHI/_OZ)
     def _d(v): return f"${v:,.2f}"
-    if chg is not None and pct is not None:
-        arrow="▲" if chg>=0 else "▼"
-        sign="+" if chg>=0 else ""
-        chg_line=f"\n  ការផ្លាស់ប្តូរ: <b>{arrow} {sign}{chg:,.2f} ({sign}{pct:.2f}%)</b>"
-    else:
-        chg_line=""
     return (f"{emoji} <b>ហាងឆេង{label}</b>\n"
             f"  ដំឡឹង : <b>{_d(dom)}</b>\n"
             f"  ជី        : <b>{_d(chi)}</b>\n"
-            f"  អោន    : <b>{_d(usd)}</b>{chg_line}")
+            f"  អោន    : <b>{_d(usd)}</b>")
 
 # ── fallback ──────────────────────────────────────────────────────────────────
 async def fallback(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
