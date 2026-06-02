@@ -1,47 +1,41 @@
-# Khmer Multi-Tool Telegram Bot
+# Khmer Multi-Tool Telegram Bot (RADY BOT)
 
-A Telegram bot offering a wide range of utilities in the Khmer language — QR code generation/scanning, text styling, unit conversion, security tools, and financial calculators.
+A Telegram bot offering utilities in the Khmer language — text styling, PDF tools, QR code generation/scanning, live gold/silver/platinum prices, and AI background removal.
 
 ## Run & Operate
 
-- Run the bot: `python3 bot.py`
+- Run the bot: `npx tsx src/bot.ts`
 - Required secret: `BOT_TOKEN` — your Telegram Bot API token (from @BotFather)
 
 ## Stack
 
-- Python 3.12
-- python-telegram-bot >= 22.7
-- Libraries: qrcode, opencv-python, pyzbar, pillow, fpdf2, numpy, python-dateutil
-- System deps (via Nix): zbar (for QR scanning)
+- **Language:** TypeScript (Node.js 20)
+- **Bot Framework:** Grammy (`grammy`)
+- **Image Processing:** `sharp`
+- **PDF Creation:** `pdf-lib`
+- **PDF → Image:** `mupdf` (WASM bindings)
+- **QR Generation:** `qrcode`
+- **QR Scanning:** `jsqr` + `sharp`
+- **Background Removal:** `@imgly/background-removal-node`
+- **HTTP:** `axios`
+- **System deps (Nix):** zbar, mupdf, freetype, libGL, libjpeg, libwebp, zlib, and others
 
 ## Where things live
 
-- `bot.py` — all bot logic, command handlers, and utility functions
-- `main.py` — simple entry point (unused; bot runs via bot.py)
-- `pyproject.toml` — Python project config and dependencies
-- `replit.nix` — system-level Nix dependencies
+- `src/bot.ts` — all bot logic, handlers, state machine, and utilities
+- `src/api/webhook.ts` — webhook server (alternative to polling)
+- `package.json` — Node.js dependencies
+- `tsconfig.json` — TypeScript configuration
 
-## Architecture decisions
+## Architecture
 
-- Single-file bot architecture; all handlers in `bot.py`
-- Uses ConversationHandler pattern to manage multi-step tool states
-- All UI strings are in Khmer
-- BOT_TOKEN read from environment variable at startup; raises RuntimeError if missing
-
-## Product
-
-Users interact with the bot on Telegram to access tools for:
-- QR Tools: Create and Scan QR codes
-- Text & Document: Text styling, Image to PDF, Morse code, character count
-- Math & Convert: Calculator, Temperature, Base conversion, Unit conversion, BMI, Loan calculator
-- Security: Password strength check, password generation, Base64 encode/decode, hashing (MD5/SHA256)
-- Fun & Utility: Random picker, Dice/coin, World clock, Age calculator
+- Single-file bot with session-based state machine (replaces Python's ConversationHandler)
+- Grammy sessions store per-user state (current menu, uploaded photos, etc.)
+- All UI strings in Khmer
+- BOT_TOKEN read from environment variable at startup; throws if missing
+- Polling mode by default; webhook mode available via `src/api/webhook.ts`
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-- `zbar` system library must be present (handled by replit.nix) for pyzbar/QR scanning to work
-- `BOT_TOKEN` must be set as a Replit secret before the bot will start
+- Code in TypeScript (converted from Python)
+- Preserve same structure and features as original Python version
