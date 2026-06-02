@@ -255,7 +255,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         gold=spots["gold"]; silver=spots["silver"]; plat=spots["platinum"]; khr=spots["khr"]
         IK_LIVE=mkb([[IKB("🔄 ធ្វើបន្ទាប់",callback_data="gold_live",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
         txt=(
-            "📊 <b>ហាងឆេងឥលូវនេះ</b> <i>(តម្លៃ Real-time)</i>\n"
+            "📊 <b>ហាងឆេងឥលូវនេះ</b> <i>(យកតាម ទីផ្សារកម្ពុជា)</i>\n"
             "━━━━━━━━━━━━━━━━━━━\n"
             +_fmt_price(gold,"មាស","🥇",khr)+"\n"
             "━━━━━━━━━━━━━━━━━━━\n"
