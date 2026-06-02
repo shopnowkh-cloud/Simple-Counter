@@ -3,7 +3,6 @@
 import os,io,logging,warnings
 from PIL import Image; from fpdf import FPDF; import fitz
 import qrcode
-from rembg import remove as rembg_remove
 from telegram import Update,InlineKeyboardButton as IKB,InlineKeyboardMarkup as IKM,InputFile,CopyTextButton
 from telegram.ext import Application,CommandHandler,MessageHandler,CallbackQueryHandler,ConversationHandler,ContextTypes,filters
 from telegram.constants import ParseMode,KeyboardButtonStyle; from telegram.warnings import PTBUserWarning
@@ -491,6 +490,7 @@ async def rmbg_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     dc=u.message.document if u.message.document else None
     try:
         await _edit_or_send(ctx,cid,"⏳ <b>កំពុងដំណើរការ...</b>",None)
+        from rembg import remove as rembg_remove
         raw=bytes(await (await ctx.bot.get_file(p.file_id if p else dc.file_id)).download_as_bytearray())
         out=rembg_remove(raw)
         buf=io.BytesIO(out); buf.name="result.png"
