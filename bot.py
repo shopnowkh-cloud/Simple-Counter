@@ -27,7 +27,7 @@ IK_CANCEL_QR   = mkb([[IKB("❌ បោះបង់",callback_data="cancel_qr",  
 IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf",style=_GREEN),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_CR_DONE  = mkb([[IKB("🔳 QR ថ្មី",callback_data="qr_create",style=_GREEN),IKB("🔍 Scan QR",callback_data="qr_scan",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_SC_DONE  = mkb([[IKB("🔍 Scan ថ្មី",callback_data="qr_scan",style=_GREEN),IKB("🔳 បង្កើត QR",callback_data="qr_create",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
-IK_GOLD       = mkb([[IKB("⚖️ បំប្លែងទំងន់មាស",callback_data="gold_convert"),IKB("💰 គណនាតម្លៃមាស",callback_data="gold_calc")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+IK_GOLD       = mkb([[IKB("📊 ហាងឆេងឥលូវនេះ",callback_data="gold_live")],[IKB("⚖️ បំប្លែងទំងន់មាស",callback_data="gold_convert"),IKB("💰 គណនាតម្លៃមាស",callback_data="gold_calc")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_CANCEL_GOLD= mkb([[IKB("❌ បោះបង់",callback_data="cancel_gold",style=_RED)]])
 IK_GOLD_DONE  = mkb([[IKB("⚖️ បំប្លែងថ្មី",callback_data="gold_convert",style=_GREEN),IKB("💰 គណនាតម្លៃ",callback_data="gold_calc",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 def ik_pdf(n,name=None):
@@ -262,6 +262,23 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "✏️ <b>វាយទំងន់ខាងក្រោម:</b>",
             reply_markup=IK_CANCEL_GOLD,parse_mode=H); return S_GOLD_CALC_W
 
+    if d=="gold_live":
+        await q.edit_message_text("⏳ <b>កំពុងទាញទិន្ន័យ...</b>",parse_mode=H)
+        import asyncio as _asyncio
+        gold,silver,plat=await _asyncio.gather(
+            _fetch_spot("GC=F"),_fetch_spot("SI=F"),_fetch_spot("PL=F"))
+        IK_LIVE=mkb([[IKB("🔄 ធ្វើបន្ទាប់",callback_data="gold_live",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
+        txt=(
+            "📊 <b>ហាងឆេងឥលូវនេះ</b> <i>(ទិន្ន័យ~៥នាទីមុន)</i>\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            +_fmt_price(gold,"មាស #gold","🥇")+"\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            +_fmt_price(silver,"ប្រាក់ #silver","🥈")+"\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            +_fmt_price(plat,"ផ្លាទីន #platinum","🔩")+"\n"
+        )
+        await q.edit_message_text(txt,reply_markup=IK_LIVE,parse_mode=H); return S_GOLD
+
     await q.edit_message_text("👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_MAIN,parse_mode=H); return S_MAIN
 
 # ── text style ────────────────────────────────────────────────────────────────
@@ -450,9 +467,26 @@ async def pdf_rename_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
     msg=await ctx.bot.send_message(chat_id=cid,text=txt,reply_markup=ik_pdf(n,name),parse_mode=H)
     _save(ctx,msg); return S_PDF
 
-# ── gold helpers ──────────────────────────────────────────────────────────────
-import re as _re
+# ── gold live prices ──────────────────────────────────────────────────────────
+import re as _re, httpx as _httpx
 _CHI=3.75; _DOM=37.5; _OZ=31.1035
+
+async def _fetch_spot(symbol:str)->float|None:
+    url=f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=5m&range=1d"
+    hdrs={"User-Agent":"Mozilla/5.0","Accept":"application/json"}
+    try:
+        async with _httpx.AsyncClient(timeout=8) as c:
+            r=await c.get(url,headers=hdrs); r.raise_for_status()
+            return float(r.json()["chart"]["result"][0]["meta"]["regularMarketPrice"])
+    except Exception as e:
+        logger.warning(f"fetch_spot {symbol}: {e}"); return None
+
+def _fmt_price(usd:float|None,label:str,emoji:str)->str:
+    if usd is None:
+        return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: N/A ⌁ ជី: N/A ⌁ អោន: N/A"
+    dom=usd*(_DOM/_OZ); chi=usd*(_CHI/_OZ)
+    def _p(v): return f"${v:,.2f}".rstrip('0').rstrip('.')
+    return f"{emoji} <b>ហាងឆេង{label}</b>\nដំឡឹង: {_p(dom)} ⌁ ជី: {_p(chi)} ⌁ អោន: {_p(usd)}"
 
 def _parse_gold(text):
     m=_re.match(r'^([\d.,]+)\s*(.*)',text.strip())
