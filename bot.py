@@ -99,8 +99,7 @@ async def cmd_start(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 
 # ── unified callback handler ───────────────────────────────────────────────────
 async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
-    q=u.callback_query; d=q.data
-    await q.answer("🔄 កំពុងធ្វើបន្ទាប់..." if d=="gold_live" else None)
+    q=u.callback_query; await q.answer(); d=q.data
     cid=q.message.chat_id; _save(ctx,q.message)
 
     if d=="home":
@@ -227,6 +226,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "📤 <b>Upload រឹបភាព QR:</b>",
             reply_markup=IK_CANCEL_QR,parse_mode=H); return S_QR_SCAN
     if d in("gold","cancel_gold","gold_live"):
+        await q.edit_message_text("⏳ <b>កំពុងទាញយកទិន្ន័យ...</b>",parse_mode=H)
         import asyncio as _asyncio
         gold,silver,plat=await _asyncio.gather(
             _fetch_spot("GC=F"),_fetch_spot("SI=F"),_fetch_spot("PL=F"))
