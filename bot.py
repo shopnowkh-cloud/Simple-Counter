@@ -27,7 +27,6 @@ IK_CANCEL_QR   = mkb([[IKB("❌ បោះបង់",callback_data="cancel_qr",  
 IK_PDF_DONE    = mkb([[IKB("🖼️ PDF ថ្មី",callback_data="photo_pdf",style=_GREEN),IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_CR_DONE  = mkb([[IKB("🔳 QR ថ្មី",callback_data="qr_create",style=_GREEN),IKB("🔍 Scan QR",callback_data="qr_scan",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 IK_QR_SC_DONE  = mkb([[IKB("🔍 Scan ថ្មី",callback_data="qr_scan",style=_GREEN),IKB("🔳 បង្កើត QR",callback_data="qr_create",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
-IK_GOLD       = mkb([[IKB("📊 ហាងឆេងឥលូវនេះ",callback_data="gold_live")],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
 def ik_pdf(n,name=None):
     lbl=f"✅ បង្កើត PDF ({n} រូប)" + (f' 📄 "{name}"' if name else "")
     return mkb([[IKB(lbl,callback_data="pdf_build",style=_GREEN),IKB("✏️ ប្តូរឈ្មោះ",callback_data="pdf_rename")],[IKB("❌ បោះបង់",callback_data="doc",style=_RED)]])
@@ -226,15 +225,7 @@ async def cb(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             "យក Scan QR Code បានយាងងាយស្រួល\n\n"
             "📤 <b>Upload រឹបភាព QR:</b>",
             reply_markup=IK_CANCEL_QR,parse_mode=H); return S_QR_SCAN
-    if d=="gold" or d=="cancel_gold":
-        await q.edit_message_text(
-            "🥇 <b>ហាងឆេងមាស</b>\n"
-            "━━━━━━━━━━━━━━━\n"
-            "📊 <b>ហាងឆេងឥលូវនេះ</b> — តម្លៃមាស, ប្រាក់, ផ្លាទីន\n\n"
-            "👇 <b>ចុចជ្រើសរើស:</b>",
-            reply_markup=IK_GOLD,parse_mode=H); return S_GOLD
-
-    if d=="gold_live":
+    if d in("gold","cancel_gold","gold_live"):
         await q.edit_message_text("⏳ <b>កំពុងទាញទិន្ន័យ...</b>",parse_mode=H)
         import asyncio as _asyncio
         gold,silver,plat=await _asyncio.gather(
