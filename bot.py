@@ -11,6 +11,17 @@ BOT_TOKEN=os.environ.get("BOT_TOKEN","")
 if not BOT_TOKEN: raise RuntimeError("BOT_TOKEN មិនទាន់កំណត់!")
 logging.basicConfig(format="%(asctime)s|%(levelname)s|%(message)s",level=logging.INFO)
 logger=logging.getLogger(__name__)
+
+def _prewarm_rembg():
+    try:
+        from rembg import remove; from PIL import Image; import io
+        img=Image.new("RGB",(10,10),color=(100,100,100))
+        buf=io.BytesIO(); img.save(buf,format="PNG")
+        remove(buf.getvalue())
+        logger.info("rembg model ready ✅")
+    except Exception as e:
+        logger.warning(f"rembg prewarm skipped: {e}")
+_prewarm_rembg()
 S_MAIN,S_DOC,S_STYLE,S_PDF,S_PDF2IMG,S_QR,S_QR_CREATE,S_QR_SCAN,S_PDF_RENAME,S_GOLD,S_RMBG=range(11)
 H=ParseMode.HTML; END=ConversationHandler.END
 
@@ -506,7 +517,7 @@ async def rmbg_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
         msg=await ctx.bot.send_message(chat_id=cid,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_RMBG_DONE,parse_mode=H)
         _save(ctx,msg)
     except Exception as e:
-        logger.error(f"rmbg: {e}")
+        import traceback; logger.error(f"rmbg error: {e}\n{traceback.format_exc()}")
         await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL_RMBG)
     return S_MAIN
 
