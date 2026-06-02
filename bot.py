@@ -502,9 +502,9 @@ async def rmbg_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
             except: pass
         IK_RMBG_DONE=mkb([[IKB("🪄 លុប Background ថ្មី",callback_data="rmbg",style=_GREEN)],[IKB("🏠 ម៉ឺនុយមេ",callback_data="home")]])
         await ctx.bot.send_document(chat_id=cid,document=InputFile(buf,filename="no_background.png"),
-            caption="✅ <b>លុប Background រួចហើយ!</b>\nរូបភាពជា PNG Background ថ្លា",
-            reply_markup=IK_RMBG_DONE,parse_mode=H)
-        ctx.user_data.pop("mid",None)
+            caption="✅ <b>លុប Background រួចហើយ!</b>\nរូបភាពជា PNG Background ថ្លា",parse_mode=H)
+        msg=await ctx.bot.send_message(chat_id=cid,text="👇 <b>ជ្រើសរើស:</b>",reply_markup=IK_RMBG_DONE,parse_mode=H)
+        _save(ctx,msg)
     except Exception as e:
         logger.error(f"rmbg: {e}")
         await _edit_or_send(ctx,cid,"❌ <b>មានបញ្ហា! ព្យាយាមម្ដងទៀត</b>",IK_CANCEL_RMBG)
