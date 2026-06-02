@@ -458,19 +458,23 @@ async def pdf_rename_handler(u:Update,ctx:ContextTypes.DEFAULT_TYPE):
 import re as _re, httpx as _httpx
 _CHI=3.75; _DOM=37.5; _OZ=31.1035
 
+async def _fetch_sq(symbol:str,client:_httpx.AsyncClient)->float|None:
+    url=f"https://forex-data-feed.swissquote.com/public-quotes/bboquotes/instrument/{symbol}/USD"
+    try:
+        r=await client.get(url); r.raise_for_status()
+        data=r.json()
+        return float(data[0]["spreadProfilePrices"][0]["bid"])
+    except Exception as e:
+        logger.warning(f"fetch_sq {symbol}: {e}"); return None
+
 async def _fetch_all_spots()->dict:
-    url="https://metals.live/api/spot"
+    import asyncio as _asyncio
     hdrs={"User-Agent":"Mozilla/5.0","Accept":"application/json"}
     try:
-        async with _httpx.AsyncClient(timeout=8) as c:
-            r=await c.get(url,headers=hdrs); r.raise_for_status()
-            data=r.json()
-            if isinstance(data,list): data=data[0]
-            return {
-                "gold":    float(data.get("gold")    or 0) or None,
-                "silver":  float(data.get("silver")  or 0) or None,
-                "platinum":float(data.get("platinum") or 0) or None,
-            }
+        async with _httpx.AsyncClient(timeout=8,headers=hdrs) as c:
+            gold,silver,plat=await _asyncio.gather(
+                _fetch_sq("XAU",c),_fetch_sq("XAG",c),_fetch_sq("XPT",c))
+            return {"gold":gold,"silver":silver,"platinum":plat}
     except Exception as e:
         logger.warning(f"fetch_all_spots: {e}"); return {"gold":None,"silver":None,"platinum":None}
 
